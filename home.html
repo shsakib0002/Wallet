@@ -173,21 +173,6 @@
         }
         @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* Auth Screen */
-        #auth-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: white; z-index: 200; display: flex;
-            flex-direction: column; align-items: center; justify-content: center;
-            padding: 30px; text-align: center;
-        }
-        .pin-dots { display: flex; gap: 15px; margin: 20px 0; }
-        .pin-dot { width: 15px; height: 15px; border-radius: 50%; background: #ddd; transition: 0.2s; }
-        .pin-dot.filled { background: var(--primary); transform: scale(1.2); }
-        
-        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; }
-        .num-btn { background: #f5f5f5; padding: 20px; font-size: 1.2rem; border-radius: 50%; width: 60px; height: 60px; margin: 0 auto; }
-        .num-btn:active { background: #e0e0e0; }
-
         /* Analytics Bars */
         .bar-container { margin-bottom: 15px; }
         .bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
@@ -235,32 +220,7 @@
 </head>
 <body>
 
-<div id="auth-screen">
-    <div style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;">🔒</div>
-    <h2 id="auth-title">Setup Security PIN</h2>
-    <p id="auth-desc" class="text-sm">Create a 4-digit PIN to secure your wallet.</p>
-    
-    <div class="pin-dots">
-        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-    </div>
-    
-    <div class="numpad">
-        <button class="num-btn" onclick="Auth.input(1)">1</button>
-        <button class="num-btn" onclick="Auth.input(2)">2</button>
-        <button class="num-btn" onclick="Auth.input(3)">3</button>
-        <button class="num-btn" onclick="Auth.input(4)">4</button>
-        <button class="num-btn" onclick="Auth.input(5)">5</button>
-        <button class="num-btn" onclick="Auth.input(6)">6</button>
-        <button class="num-btn" onclick="Auth.input(7)">7</button>
-        <button class="num-btn" onclick="Auth.input(8)">8</button>
-        <button class="num-btn" onclick="Auth.input(9)">9</button>
-        <button class="num-btn" style="visibility:hidden"></button>
-        <button class="num-btn" onclick="Auth.input(0)">0</button>
-        <button class="num-btn" onclick="Auth.clear()">⌫</button>
-    </div>
-</div>
-
-<div id="app" style="display:none;">
+<div id="app">
     
     <aside>
         <h2 style="color: var(--primary); margin-bottom: 40px;">ProWallet BD</h2>
@@ -344,7 +304,6 @@
                 <button class="btn-outline" onclick="Actions.exportJSON()">⬇️ Backup Data (JSON)</button>
                 <button class="btn-outline" onclick="Actions.exportPrint()">🖨️ Print / PDF Report</button>
                 <button class="btn-danger" onclick="Actions.resetData()">⚠️ Reset All Data</button>
-                <button class="btn-outline" onclick="Auth.logout()">🔒 Lock App</button>
                 <button class="btn-outline" onclick="Views.closeModals()">Close</button>
             </div>
         </div>
@@ -352,7 +311,7 @@
 
 </div>
 
-<script type="module" src="js/app.js"></script>
+<script type="module" src="./app.js"></script>
 
 </body>
 </html>
