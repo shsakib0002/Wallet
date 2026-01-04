@@ -1,80 +1,15 @@
-import { DB, Security, CATEGORIES } from './db.js';
+import { DB, CATEGORIES } from './db.js';
 
 // --- GLOBAL VARIABLES FOR UI ---
-window.Auth = {};
 window.Router = {};
 window.Actions = {};
 window.Views = {};
 
 // ================= INITIALIZATION =================
 window.onload = async () => {
-    DB.init(); // Load data from LocalStorage
-    await Auth.check(); // Check if PIN is needed
+    DB.init();            // Load data from LocalStorage
+    window.Router.init(); // <--- GO STRAIGHT TO DASHBOARD (No Auth Check)
 };
-
-// ================= AUTH (SECURITY) =================
-let inputBuffer = '';
-
-window.Auth = {
-    check: async () => {
-        if (Security.getHash()) {
-            document.getElementById('auth-title').innerText = "Enter PIN to Unlock";
-            document.getElementById('auth-desc').innerText = "Secure Access";
-        } else {
-            document.getElementById('auth-title').innerText = "Setup New PIN";
-            document.getElementById('auth-desc').innerText = "Create a 4-digit PIN";
-        }
-    },
-
-    input: (num) => {
-        if (inputBuffer.length < 4) {
-            inputBuffer += num;
-            updateAuthDots();
-        }
-        if (inputBuffer.length === 4) processAuth();
-    },
-
-    clear: () => {
-        inputBuffer = '';
-        updateAuthDots();
-    },
-
-    logout: () => location.reload()
-};
-
-function updateAuthDots() {
-    const dots = document.querySelectorAll('.pin-dot');
-    dots.forEach((d, i) => {
-        if (i < inputBuffer.length) d.classList.add('filled');
-        else d.classList.remove('filled');
-    });
-}
-
-async function processAuth() {
-    if (!Security.getHash()) {
-        await Security.setPin(inputBuffer);
-        unlockApp();
-    } else {
-        const isValid = await Security.verifyPin(inputBuffer);
-        if (isValid) {
-            unlockApp();
-        } else {
-            document.getElementById('auth-title').innerText = "Incorrect PIN";
-            document.getElementById('auth-title').style.color = "#E53935";
-            setTimeout(() => {
-                window.Auth.clear();
-                document.getElementById('auth-title').innerText = "Enter PIN to Unlock";
-                document.getElementById('auth-title').style.color = "#263238";
-            }, 1000);
-        }
-    }
-}
-
-function unlockApp() {
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    window.Router.init();
-}
 
 // ================= ACTIONS (CONTROLLER) =================
 window.Actions = {
