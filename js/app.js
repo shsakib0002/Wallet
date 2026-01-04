@@ -1,7 +1,6 @@
 import { DB, Security, CATEGORIES } from './db.js';
 
 // --- GLOBAL VARIABLES FOR UI ---
-// We attach these to 'window' so your HTML onclick="" attributes still work
 window.Auth = {};
 window.Router = {};
 window.Actions = {};
@@ -9,8 +8,8 @@ window.Views = {};
 
 // ================= INITIALIZATION =================
 window.onload = async () => {
-    DB.init();
-    await Auth.check();
+    DB.init(); // Load data from LocalStorage
+    await Auth.check(); // Check if PIN is needed
 };
 
 // ================= AUTH (SECURITY) =================
@@ -53,11 +52,9 @@ function updateAuthDots() {
 
 async function processAuth() {
     if (!Security.getHash()) {
-        // Setup Mode
         await Security.setPin(inputBuffer);
         unlockApp();
     } else {
-        // Verify Mode
         const isValid = await Security.verifyPin(inputBuffer);
         if (isValid) {
             unlockApp();
@@ -95,8 +92,7 @@ window.Actions = {
             note: document.getElementById('inp-note').value
         };
 
-        DB.addTransaction(txData); // Call the DB!
-        
+        DB.addTransaction(txData); 
         window.Views.closeModals();
         window.Router.refresh();
         showToast("Saved Successfully");
@@ -105,14 +101,14 @@ window.Actions = {
     addAccount: () => {
         const name = prompt("Account Name (e.g., Bank Asia):");
         if (name) {
-            DB.addAccount(name); // Call the DB!
+            DB.addAccount(name);
             window.Router.refresh();
         }
     },
 
     deleteTx: (id) => {
         if (confirm("Delete this record?")) {
-            DB.deleteTransaction(id); // Call the DB!
+            DB.deleteTransaction(id);
             window.Router.refresh();
         }
     },
@@ -138,8 +134,6 @@ window.Actions = {
 };
 
 // ================= ROUTER & VIEWS =================
-// (I am condensing this part as it relies on the DB getters now)
-
 window.Router = {
     init: () => window.Router.go('dashboard'),
     refresh: () => {
@@ -148,6 +142,11 @@ window.Router = {
     },
     go: (route) => {
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        // Find the nav item that matches this route and activate it (simplified)
+        const navMap = {'dashboard': 0, 'transactions': 1, 'analytics': 2, 'accounts': 3, 'settings': 4};
+        const navs = document.querySelectorAll('aside .nav-item');
+        if(navs[navMap[route]]) navs[navMap[route]].classList.add('active');
+
         if(route === 'dashboard') window.Views.renderDashboard();
         if(route === 'transactions') window.Views.renderTransactions();
         if(route === 'analytics') window.Views.renderAnalytics();
@@ -157,22 +156,22 @@ window.Router = {
 };
 
 window.Views = {
-    currentTxType: 'expense',
-    
     setTxType: (type) => {
-        // (Copy UI toggle logic from original file here, or keep it simple)
         document.getElementById('btn-exp').classList.toggle('active', type === 'expense');
         document.getElementById('btn-inc').classList.toggle('active', type === 'income');
-        // Add styling logic back if needed
+        
+        // Restore button colors
+        document.getElementById('btn-exp').style.background = type === 'expense' ? 'var(--primary)' : 'transparent';
+        document.getElementById('btn-exp').style.color = type === 'expense' ? 'white' : 'inherit';
+        document.getElementById('btn-inc').style.background = type === 'income' ? 'var(--success)' : 'transparent';
+        document.getElementById('btn-inc').style.color = type === 'income' ? 'white' : 'inherit';
     },
 
     openAddModal: () => {
-        // Populate Categories from DB/Constants
         const selCat = document.getElementById('inp-cat');
         selCat.innerHTML = '<option value="">Select Category</option>';
         Object.keys(CATEGORIES).forEach(k => selCat.add(new Option(k, k)));
 
-        // Populate Accounts from DB
         const selAcc = document.getElementById('inp-acc');
         selAcc.innerHTML = '';
         DB.getAccounts().forEach(a => {
@@ -180,6 +179,7 @@ window.Views = {
         });
 
         document.getElementById('inp-date').valueAsDate = new Date();
+        window.Views.setTxType('expense');
         document.getElementById('modal-txn').classList.add('open');
     },
 
@@ -197,78 +197,70 @@ window.Views = {
         if(document.querySelector('.print-header').style.display === 'block') window.Router.go('dashboard');
     },
 
-    // --- RENDER FUNCTIONS (Use DB.get...) ---
+    // --- RESTORED ORIGINAL DESIGNS ---
     renderDashboard: () => {
         const accounts = DB.getAccounts();
         const transactions = DB.getTransactions();
         const total = accounts.reduce((sum, a) => sum + a.balance, 0);
         const recent = transactions.slice(0, 5);
 
-        // ... (Insert your HTML generation code here using 'total' and 'recent') ...
-        // Example:
-        document.getElementById('main-container').innerHTML = `
+        let html = `
             <div class="card" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color:white;">
                 <div class="text-sm">Total Balance</div>
                 <div class="text-lg currency" style="margin: 10px 0;">${DB.formatMoney(total)}</div>
+                <div class="text-sm" style="opacity:0.8">Overview of all accounts</div>
             </div>
+
+            <h3>Accounts</h3>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:15px; margin-bottom:25px;">
+                ${accounts.map(a => `
+                    <div class="card" style="margin:0; padding:15px;">
+                        <div class="text-sm">${a.name}</div>
+                        <div style="font-weight:bold; font-size:1.1rem;">${DB.formatMoney(a.balance)}</div>
+                    </div>
+                `).join('')}
+                <div class="card" style="margin:0; padding:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px dashed #ccc;" onclick="Actions.addAccount()">
+                    + Add
+                </div>
+            </div>
+
             <h3>Recent Transactions</h3>
-            <div class="card">
+            <div class="card" style="padding:0 20px;">
+                ${recent.length ? '' : '<p style="padding:20px 0; color:#999;">No transactions found.</p>'}
                 ${recent.map(t => renderTxItem(t)).join('')}
             </div>
         `;
+        document.getElementById('main-container').innerHTML = html;
     },
 
     renderTransactions: () => {
         const list = DB.getTransactions();
-        document.getElementById('main-container').innerHTML = `
-            <h2>All Transactions</h2>
-            <div class="card">${list.map(t => renderTxItem(t)).join('')}</div>
-        `;
+        let html = `<h2>All Transactions</h2><div class="card" style="padding:0 20px;">`;
+        html += list.length ? '' : '<p style="padding:20px 0; color:#999;">No records.</p>';
+        html += list.map(t => renderTxItem(t)).join('');
+        html += `</div>`;
+        document.getElementById('main-container').innerHTML = html;
     },
 
-    renderAccounts: () => {
-        const accounts = DB.getAccounts();
-        // ... Generate HTML using 'accounts' ...
-        document.getElementById('main-container').innerHTML = `
-            <h2>Accounts</h2>
-            <button class="btn-primary" onclick="Actions.addAccount()">+ Add</button>
-            ${accounts.map(a => `<div>${a.name}: ${DB.formatMoney(a.balance)}</div>`).join('')}
-        `;
-    },
-    
     renderAnalytics: () => {
-         // Logic using DB.getTransactions()
-         document.getElementById('main-container').innerHTML = "<h2>Analytics</h2><p>Coming soon...</p>"; 
-    },
+        const cats = {};
+        let totalExp = 0;
+        DB.getTransactions().filter(t => t.type === 'expense').forEach(t => {
+            cats[t.category] = (cats[t.category] || 0) + t.amount;
+            totalExp += t.amount;
+        });
 
-    renderSettings: () => {
-        document.getElementById('modal-settings').classList.add('open');
-    },
-    
-    renderPrintView: () => {
-        // Logic using DB.getTransactions()
-        // ...
-    }
-};
-
-// Helper for HTML generation
-function renderTxItem(t) {
-    const isExp = t.type === 'expense';
-    const sign = isExp ? '-' : '+';
-    // We can't access DB easily inside map unless we pass accounts, 
-    // so for now just show accountId or look it up before mapping.
-    return `
-        <div class="tx-item">
-            <div>${t.category} <small>(${t.date})</small></div>
-            <div class="${isExp ? 'exp' : 'inc'}">${sign} ${DB.formatMoney(t.amount)}</div>
-            <button onclick="Actions.deleteTx('${t.id}')">X</button>
-        </div>
-    `;
-}
-
-function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.innerText = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
-}
+        let html = `<h2>Expense Analytics</h2><div class="card">`;
+        if(totalExp === 0) html += `<p class="text-sm">No expense data.</p>`;
+        else {
+            Object.entries(cats).sort((a,b) => b[1] - a[1]).forEach(([cat, amt]) => {
+                const pct = ((amt / totalExp) * 100).toFixed(1);
+                html += `
+                    <div class="bar-container">
+                        <div class="bar-label">
+                            <span>${cat}</span>
+                            <span>${DB.formatMoney(amt)} (${pct}%)</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:${pct}%"></div>
+                        </div>
