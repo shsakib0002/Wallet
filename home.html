@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wallet Budget Tracker</title>
+    <style>
+        :root {
+            --primary: #00BFA5;
+            --primary-dark: #00897B;
+            --bg-color: #F0F2F5;
+            --card-bg: #FFFFFF;
+            --text-main: #2D3436;
+            --text-light: #636E72;
+            --danger: #FF7675;
+            --success: #00B894;
+            --shadow: 0 4px 20px rgba(0,0,0,0.06);
+            --radius: 16px;
+            --nav-width-mobile: 100%;
+            --nav-width-desktop: 250px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align top for desktop */
+            padding: 20px;
+        }
+
+        /* MAIN APP CONTAINER */
+        .app-container {
+            width: 100%;
+            max-width: 480px; /* Mobile default */
+            background: var(--card-bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            height: 100vh; /* Mobile full height */
+            max-height: 900px; /* Limit height on desktop */
+            border-radius: 0px; /* Mobile full width */
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        /* HEADER */
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 24px;
+            padding-top: max(24px, env(safe-area-inset-top));
+            flex-shrink: 0;
+        }
+
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .balance-label { font-size: 14px; opacity: 0.9; margin-bottom: 4px; }
+        .balance-amount { font-size: 32px; font-weight: 700; }
+
+        /* CONTENT AREA */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 80px; /* Space for mobile nav */
+        }
+
+        /* VIEWS */
+        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CARDS & LISTS */
+        .accounts-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+            scrollbar-width: none;
+        }
+        .accounts-scroll::-webkit-scrollbar { display: none; }
+
+        .account-card {
+            background: var(--card-bg);
+            border: 1px solid #eee;
+            min-width: 160px;
+            padding: 18px;
+            border-radius: var(--radius);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .account-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+            border-color: var(--primary);
+        }
+        .acc-name { font-size: 12px; color: var(--text-light); text-transform: uppercase; margin-bottom: 8px; }
+        .acc-amount { font-size: 18px; font-weight: 700; color: var(--primary-dark); }
+
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-title { font-size: 18px; font-weight: 600; }
+        .show-more { font-size: 12px; color: var(--primary); font-weight: 600; cursor: pointer; }
+
+        .tx-list { display: flex; flex-direction: column; gap: 12px; }
+        .tx-item {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            border: 1px solid #f0f0f0;
+        }
+        .tx-left { display: flex; align-items: center; gap: 12px; }
+        .tx-icon {
+            width: 40px; height: 40px; background: #E0F2F1; color: var(--primary);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;
+        }
+        .tx-info h4 { font-size: 14px; margin-bottom: 2px; }
+        .tx-info p { font-size: 11px; color: var(--text-light); }
+        .tx-amount { font-weight: 600; font-size: 14px; }
+
+        /* FORMS */
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-light); font-weight: 500; }
+        .form-control {
+            width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 12px;
+            font-size: 16px; background: #fafafa; transition: 0.2s;
+        }
+        .form-control:focus { background: white; border-color: var(--primary); outline: none; }
+        .btn-primary {
+            width: 100%; padding: 16px; background: var(--primary); color: white;
+            border: none; border-radius: 12px; font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: 0.2s;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+
+        /* STATS */
+        .stat-bar-container { background: white; padding: 16px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 12px; }
+        .progress-bg { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 1s ease; }
+
+        /* NAVIGATION */
+        nav {
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #eee;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            color: #B2BEC3; font-size: 10px; gap: 4px; cursor: pointer; transition: 0.2s;
+        }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 20px; }
+
+        /* TOAST */
+        #toast {
+            position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+            background: rgba(45, 52, 54, 0.9); color: white; padding: 12px 24px;
+            border-radius: 24px; font-size: 14px; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s; z-index: 100; white-space: nowrap;
+        }
+        #toast.show { opacity: 1; }
+
+        /* =========================
+           RESPONSIVE / DESKTOP STYLES
+           ========================= */
+        @media (min-width: 769px) {
+            body { padding: 40px; align-items: center; }
+            
+            .app-container {
+                max-width: 1100px; /* Desktop Width */
+                height: 85vh; /* Fixed height on desktop */
+                border-radius: 24px;
+                flex-direction: row;
+                overflow: hidden;
+            }
+
+            /* Sidebar Nav */
+            nav {
+                width: var(--nav-width-desktop);
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: stretch;
+                padding: 40px 20px;
+                border-top: none;
+                border-right: 1px solid #eee;
+                background: #fafafa;
+            }
+
+            .nav-item {
+                flex-direction: row;
+                font-size: 16px;
+                padding: 16px;
+                border-radius: 12px;
+                margin-bottom: 8px;
+                justify-content: flex-start;
+            }
+            .nav-item:hover { background: rgba(0, 191, 165, 0.05); }
+            .nav-item.active { background: rgba(0, 191, 165, 0.1); }
+            .nav-icon { margin-right: 12px; }
+
+            /* Main Content Layout */
+            main {
+                padding: 40px;
+                padding-bottom: 40px;
+                overflow-y: auto;
+                background: #fff;
+                display: grid;
+                grid-template-columns: 1fr 1fr; /* 2 Columns */
+                grid-template-rows: auto 1fr;
+                gap: 30px;
+            }
+
+            /* Header spans full width */
+            header {
+                grid-column: 1 / -1;
+                border-radius: 16px;
+                padding: 30px;
+            }
+
+            /* Specific View Grid Handling */
+            
+            /* Dashboard View Grid Layout */
+            #view-dashboard {
+                grid-template-columns: 350px 1fr;
+                grid-template-rows: auto auto;
+            }
+            #view-dashboard .accounts-scroll {
+                grid-column: 1 / 2;
+                flex-direction: column;
+                overflow: visible;
+            }
+            .account-card { width: 100%; }
+            
+            #view-dashboard .section-header {
+                grid-column: 1 / -1; /* "Last Records" spans both? No, let's put it right */
+                grid-column: 2 / 3;
+            }
+            #view-dashboard .tx-list {
+                grid-column: 2 / 3;
+            }
+
+            /* Stats View Grid Layout */
+            #view-stats {
+                grid-column: 1 / -1;
+            }
+
+            /* Add View - Centered */
+            #view-add {
+                grid-column: 1 / -1;
+                max-width: 500px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- SIDEBAR / BOTTOM NAV -->
+        <nav>
+            <div class="nav-item active" onclick="switchTab('dashboard')">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('add')">
+                <span class="nav-icon">➕</span>
+                <span>Planning</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('stats')">
+                <span class="nav-icon">📈</span>
+                <span>Statistics</span>
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">⋮</span>
+                <span>More</span>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <div style="display:contents"> <!-- Helper to keep flex/grid structure valid -->
+            
+            <header id="main-header">
+                <div class="header-top">
+                    <div>
+                        <div class="balance-label">Total Balance</div>
+                        <div class="balance-amount">৳ <span id="header-balance">0.00</span></div>
+                    </div>
+                    <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display:flex; align-items:center; justify-content:center;">👤</div>
+                </div>
+            </header>
+
+            <main>
+                <!-- DASHBOARD VIEW -->
+                <section id="view-dashboard" class="view-section active">
+                    
+                    <!-- Accounts (Left Col on Desktop) -->
+                    <div class="accounts-scroll" id="accounts-container">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <!-- Transactions (Right Col on Desktop) -->
+                    <div class="section-header">
+                        <div class="section-title">Last Records</div>
+                        <div class="show-more" onclick="switchTab('stats')">Show full stats</div>
+                    </div>
+
+                    <div class="tx-list" id="tx-list-dashboard">
+                        <!-- Injected via JS -->
+                    </div>
+                </section>
+
+                <!-- ADD TRANSACTION VIEW -->
+                <section id="view-add" class="view-section">
+                    <h2 style="margin-bottom: 20px;">Add Expense</h2>
+                    <div class="form-group">
+                        <label class="form-label">Amount (BDT)</label>
+                        <input type="number" id="inp-amount" class="form-control" placeholder="0.00">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <select id="inp-category" class="form-control" onchange="updateSubCategories()">
+                            <option value="">Select Category</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Sub-category</label>
+                        <select id="inp-subcategory" class="form-control" disabled>
+                            <option value="">Select Sub-category</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Account</label>
+                        <select id="inp-account" class="form-control">
+                            <!-- Injected JS -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="date" id="inp-date" class="form-control">
+                    </div>
+
+                    <button class="btn-primary" onclick="addTransaction()">Save Expense</button>
+                </section>
+
+                <!-- STATISTICS VIEW -->
+                <section id="view-stats" class="view-section">
+                    <h2 style="margin-bottom: 20px;">Expense Analysis</h2>
+                    <div id="stats-container">
+                        <!-- Injected JS -->
+                    </div>
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                        <button class="btn-primary" style="background: #ff7675;" onclick="clearData()">Reset All Data</button>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Toast -->
+            <div id="toast">Transaction saved!</div>
+        </div>
+    </div>
+
+    <script>
+        // =========================
+        // DATA STRUCTURE
+        // =========================
+        const CATEGORIES = {
+            "Offers": ["Egg Club", "Inventory Platform", "Favourites", "Winter Collection", "Flash Sales"],
+            "Food": ["Fruits & Vegetables", "Meat & Fish", "Cooking", "Sauces & Pickles", "Dairy & Eggs", "Breakfast", "Candy & Chocolate", "Snacks", "Beverages", "Baking", "Frozen & Canned", "Diabetic Food", "Ice Cream"],
+            "Transportation (BD)": ["Bus", "Train", "CNG / Auto-Rickshaw", "Rickshaw", "Private Car", "Microbus", "Motorcycle", "Bicycle", "Launch / Ferry", "Ride Share (Uber / Pathao / Bolt)"],
+            "Cleaning Supplies": ["Dishwashing Supplies", "Laundry", "Toilet Cleaners", "Napkins & Paper Products", "Pest Control", "Floor & Glass Cleaners", "Air Fresheners", "Disposables & Trash Bags", "Shoe Care", "Trash Bin & Basket"],
+            "Home & Kitchen": ["Kitchen Accessories", "Kitchen Appliances", "Lights & Electrical", "Tools & Hardware", "Basket & Bucket", "Box & Container", "Gardening", "Rack & Organizer"],
+            "Baby Care": ["Diapers", "Baby Food", "Baby Skincare", "Wipes", "Baby Oral Care", "Newborn Essentials", "Baby Accessories", "Feeders"],
+            "Personal Care": ["Women's Care", "Men's Care", "Handwash", "Tissue & Wipes", "Oral Care", "Skin Care", "Talcum Powder", "Hair Color"],
+            "Stationery & Office": ["Office Electronics", "Organizers", "Writing & Printing", "Paper Supplies", "School Supplies", "Arts & Crafts"],
+            "Pet Care": ["Cat Food", "Cat Litters", "Kitten Food", "Dog Food", "Grooming & Cleaning", "Bird & Other Pet Food"],
+            "Health & Wellness": ["Keto Food", "Antiseptics", "Handwash & Handrub", "Herbal & Digestive Aids", "Food Supplements", "Face Masks & Safety", "Family Planning", "Mouthwashes", "Inhaler & Balm", "Adult Diapers", "Medical Devices"],
+            "Vehicle Essentials": ["Fuel", "Lubricants", "Car Wash", "Servicing", "Spare Parts", "Insurance", "Parking", "Toll"]
+        };
+
+        // =========================
+        // STATE MANAGEMENT
+        // =========================
+        
+        const DEFAULT_ACCOUNTS = [
+            { name: 'NAGAD', balance: 0.00 },
+            { name: 'BKASH', balance: 50.00 },
+            { name: 'BRAC BANK', balance: 7290.00 }
+        ];
+
+        const DEFAULT_TRANSACTIONS = [
+            { id: 1, date: '2023-01-03', category: 'Personal Expenses', subcategory: 'Cash in wallet', amount: 1000.00, account: 'BRAC BANK', type: 'expense' },
+            { id: 2, date: '2023-01-03', category: 'Transportation (BD)', subcategory: 'Motorcycle', amount: 1000.00, account: 'BRAC BANK', type: 'expense' }
+        ];
+
+        let state = {
+            accounts: JSON.parse(localStorage.getItem('wa_accounts')) || DEFAULT_ACCOUNTS,
+            transactions: JSON.parse(localStorage.getItem('wa_transactions')) || DEFAULT_TRANSACTIONS
+        };
+
+        // =========================
+        // LOGIC
+        // =========================
+
+        function saveState() {
+            localStorage.setItem('wa_accounts', JSON.stringify(state.accounts));
+            localStorage.setItem('wa_transactions', JSON.stringify(state.transactions));
+            renderAll();
+        }
+
+        function formatCurrency(amount) {
+            return amount.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function getTotalBalance() {
+            return state.accounts.reduce((acc, curr) => acc + curr.balance, 0);
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // =========================
+        // RENDER
+        // =========================
+
+        function renderHeader() {
+            document.getElementById('header-balance').textContent = formatCurrency(getTotalBalance());
+        }
+
+        function renderAccounts() {
+            const container = document.getElementById('accounts-container');
+            const select = document.getElementById('inp-account');
+            
+            container.innerHTML = '';
+            select.innerHTML = '';
+
+            state.accounts.forEach(acc => {
+                // Card
+                const card = document.createElement('div');
+                card.className = 'account-card';
+                card.innerHTML = `
+                    <div class="acc-name">${acc.name}</div>
+                    <div class="acc-amount">৳ ${formatCurrency(acc.balance)}</div>
+                `;
+                container.appendChild(card);
+
+                // Select Option
+                const opt = document.createElement('option');
+                opt.value = acc.name;
+                opt.textContent = `${acc.name} (৳${formatCurrency(acc.balance)})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function renderTransactions() {
+            const list = document.getElementById('tx-list-dashboard');
+            list.innerHTML = '';
+            
+            const sorted = [...state.transactions].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            sorted.slice(0, 20).forEach(tx => {
+                const item = document.createElement('div');
+                item.className = 'tx-item';
+                
+                let icon = '🛍️';
+                if (tx.category.includes('Food')) icon = '🍔';
+                if (tx.category.includes('Transport')) icon = '🚌';
+                if (tx.category.includes('Health')) icon = '💊';
+                if (tx.subcategory.includes('Cash')) icon = '💵';
+
+                const dateObj = new Date(tx.date);
+                const dateStr = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+                item.innerHTML = `
+                    <div class="tx-left">
+                        <div class="tx-icon">${icon}</div>
+                        <div class="tx-info">
+                            <h4>${tx.subcategory}</h4>
+                            <p>${tx.category} • ${dateStr}</p>
+                        </div>
+                    </div>
+                    <div class="tx-amount expense">-৳${formatCurrency(tx.amount)}</div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function renderStats() {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = '';
+
+            const totals = {};
+            let grandTotal = 0;
+            state.transactions.forEach(tx => {
+                if (!totals[tx.category]) totals[tx.category] = 0;
+                totals[tx.category] += tx.amount;
+                grandTotal += tx.amount;
+            });
+
+            if (grandTotal === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#999; margin-top:40px;">No data to display yet.</div>';
+                return;
+            }
+
+            const sortedCats = Object.entries(totals).sort((a,b) => b[1] - a[1]);
+
+            sortedCats.forEach(([cat, amount]) => {
+                const percent = (amount / grandTotal) * 100;
+                
+                const row = document.createElement('div');
+                row.className = 'stat-bar-container';
+                row.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:5px;">
+                        <span style="font-weight:600;">${cat}</span>
+                        <span style="color:var(--text-light);">৳ ${formatCurrency(amount)}</span>
+                    </div>
+                    <div class="progress-bg">
+                        <div class="progress-fill" style="width: ${percent}%"></div>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function renderAll() {
+            renderHeader();
+            renderAccounts();
+            renderTransactions();
+            renderStats();
+        }
+
+        // =========================
+        // FORM
+        // =========================
+
+        function initForm() {
+            const catSelect = document.getElementById('inp-category');
+            for (const cat in CATEGORIES) {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                catSelect.appendChild(opt);
+            }
+            document.getElementById('inp-date').valueAsDate = new Date();
+        }
+
+        function updateSubCategories() {
+            const catSelect = document.getElementById('inp-category');
+            const subSelect = document.getElementById('inp-subcategory');
+            const selectedCat = catSelect.value;
+
+            subSelect.innerHTML = '<option value="">Select Sub-category</option>';
+
+            if (selectedCat && CATEGORIES[selectedCat]) {
+                subSelect.disabled = false;
+                CATEGORIES[selectedCat].forEach(sub => {
+                    const opt = document.createElement('option');
+                    opt.value = sub;
+                    opt.textContent = sub;
+                    subSelect.appendChild(opt);
+                });
+            } else {
+                subSelect.disabled = true;
+            }
+        }
+
+        function addTransaction() {
+            const amount = parseFloat(document.getElementById('inp-amount').value);
+            const category = document.getElementById('inp-category').value;
+            const subcategory = document.getElementById('inp-subcategory').value;
+            const accountName = document.getElementById('inp-account').value;
+            const date = document.getElementById('inp-date').value;
+
+            if (!amount || amount <= 0) { showToast('Please enter a valid amount'); return; }
+            if (!category) { showToast('Please select a category'); return; }
+            if (!subcategory) { showToast('Please select a sub-category'); return; }
+            if (!accountName) { showToast('Please select an account'); return; }
+
+            const accountIndex = state.accounts.findIndex(a => a.name === accountName);
+            if (accountIndex > -1) {
+                state.accounts[accountIndex].balance -= amount;
+            }
+
+            const newTx = {
+                id: Date.now(),
+                date: date,
+                category: category,
+                subcategory: subcategory,
+                amount: amount,
+                account: accountName,
+                type: 'expense'
+            };
+            state.transactions.push(newTx);
+
+            saveState();
+            showToast('✅ Expense recorded successfully.');
+            document.getElementById('inp-amount').value = '';
+            
+            setTimeout(() => switchTab('dashboard'), 800);
+        }
+
+        function clearData() {
+            if(confirm("Are you sure you want to reset all data? This cannot be undone.")) {
+                localStorage.removeItem('wa_accounts');
+                localStorage.removeItem('wa_transactions');
+                location.reload();
+            }
+        }
+
+        // =========================
+        // NAVIGATION
+        // =========================
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const index = tabName === 'dashboard' ? 0 : tabName === 'add' ? 1 : tabName === 'stats' ? 2 : 3;
+            document.querySelectorAll('.nav-item')[index].classList.add('active');
+
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${tabName}`).classList.add('active');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initForm();
+            renderAll();
+        });
+    </script>
+</body>
+</html>
