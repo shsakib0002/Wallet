@@ -3,387 +3,363 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProWallet | Personal Finance Manager</title>
-    <meta name="description" content="Offline-capable personal finance manager">
+    <meta name="theme-color" content="#009688">
+    <title>ProWallet BD | Secure Offline Finance</title>
+    <meta name="description" content="Offline-first Personal Finance Manager for Bangladesh">
+
     <style>
         /* =========================================
-           CSS VARIABLES & RESET
+           1. CSS VARIABLES & RESET
            ========================================= */
         :root {
-            --primary: #00BFA5;
-            --primary-dark: #00897B;
-            --primary-light: #E0F2F1;
-            --secondary: #2D3436;
-            --text-main: #2D3436;
-            --text-light: #636E72;
-            --danger: #FF7675;
-            --warning: #FDCB6E;
-            --success: #00B894;
-            --info: #0984e3;
-            --bg-body: #F5F7FA;
+            --primary: #009688; /* Teal */
+            --primary-dark: #00796B;
+            --primary-light: #B2DFDB;
+            --accent: #FFC107;
+            --bg-body: #F4F7F6;
             --bg-card: #FFFFFF;
-            --shadow: 0 4px 12px rgba(0,0,0,0.05);
+            --text-main: #263238;
+            --text-light: #546E7A;
+            --danger: #E53935;
+            --success: #43A047;
+            --border: #ECEFF1;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
             --radius: 12px;
-            --nav-width: 250px;
+            --nav-width: 260px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
         
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
             background-color: var(--bg-body);
             color: var(--text-main);
             height: 100vh;
-            overflow: hidden; /* App handles scrolling */
+            overflow: hidden;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
         }
 
         /* =========================================
-           LAYOUT ARCHITECTURE
+           2. LAYOUT & RESPONSIVE
            ========================================= */
-        #app {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            background: var(--bg-card);
-            position: relative;
-            overflow: hidden;
-        }
+        #app { display: flex; height: 100%; width: 100%; position: relative; }
 
         /* Sidebar (Desktop) */
         aside {
             width: var(--nav-width);
             background: var(--bg-card);
-            border-right: 1px solid #eee;
-            display: flex;
+            border-right: 1px solid var(--border);
+            display: none; /* Hidden on mobile */
             flex-direction: column;
             padding: 20px;
-            z-index: 20;
+            z-index: 50;
         }
 
-        /* Main Content Area */
+        /* Main Content */
         main {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
+            padding-bottom: 80px; /* Space for mobile nav */
             position: relative;
-            background: var(--bg-body);
         }
 
         /* Mobile Bottom Nav */
         .mobile-nav {
-            display: none;
-            position: absolute;
-            bottom: 0; left: 0; width: 100%;
-            background: white;
-            border-top: 1px solid #eee;
-            justify-content: space-around;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            display: flex; justify-content: space-around;
             padding: 12px 0;
-            z-index: 30;
+            z-index: 50;
+        }
+
+        @media (min-width: 769px) {
+            aside { display: flex; }
+            main { padding-bottom: 20px; }
+            .mobile-nav { display: none; }
+            #fab { right: 40px; bottom: 40px; }
         }
 
         /* =========================================
-           COMPONENTS
+           3. COMPONENTS
            ========================================= */
         /* Typography */
-        h1, h2, h3 { font-weight: 600; color: var(--secondary); margin-bottom: 1rem; }
+        h1, h2, h3 { font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem; }
         .text-sm { font-size: 0.85rem; color: var(--text-light); }
         .text-lg { font-size: 1.5rem; font-weight: 700; }
-        .currency { font-family: monospace; }
+        .currency { font-family: 'Courier New', monospace; letter-spacing: -0.5px; }
 
         /* Cards */
         .card {
-            background: white;
+            background: var(--bg-card);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
             padding: 20px;
             margin-bottom: 20px;
-            transition: transform 0.2s;
+            border: 1px solid var(--border);
         }
-        
-        /* Grid System */
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; }
 
         /* Buttons & Inputs */
         button {
             cursor: pointer; border: none; font-size: 14px;
-            border-radius: 8px; padding: 10px 16px; transition: 0.2s;
-            font-weight: 500;
+            border-radius: 8px; padding: 12px 20px; transition: 0.2s;
+            font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
         }
-        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; }
         .btn-primary:hover { background: var(--primary-dark); }
         .btn-danger { background: var(--danger); color: white; }
         .btn-outline { border: 1px solid #ddd; background: transparent; color: var(--text-main); }
-        .btn-icon { background: transparent; padding: 8px; font-size: 1.2rem; }
+        .btn-icon { background: transparent; padding: 8px; font-size: 1.2rem; color: var(--text-light); }
 
-        input, select, textarea {
-            width: 100%; padding: 12px; border: 1px solid #ddd;
-            border-radius: 8px; font-size: 14px; background: white;
-            margin-bottom: 10px;
+        input, select {
+            width: 100%; padding: 14px; border: 1px solid #ddd;
+            border-radius: 8px; font-size: 16px; background: #fff;
+            margin-bottom: 15px; appearance: none;
         }
         input:focus, select:focus { border-color: var(--primary); }
 
         /* Navigation Items */
         .nav-item {
             display: flex; align-items: center; gap: 12px;
-            padding: 12px; border-radius: 8px; color: var(--text-light);
-            cursor: pointer; margin-bottom: 5px;
+            padding: 14px; border-radius: 8px; color: var(--text-light);
+            cursor: pointer; margin-bottom: 5px; font-weight: 500;
         }
-        .nav-item:hover { background: var(--bg-body); }
-        .nav-item.active { background: var(--primary-light); color: var(--primary-dark); font-weight: 600; }
+        .nav-item:hover { background: var(--bg-body); color: var(--primary); }
+        .nav-item.active { background: var(--primary-light); color: var(--primary-dark); }
 
-        /* Fab (Floating Action Button) */
-        .fab {
-            position: fixed; bottom: 80px; right: 20px;
-            width: 56px; height: 56px; border-radius: 50%;
+        /* Fab */
+        #fab {
+            position: fixed; bottom: 90px; right: 20px;
+            width: 60px; height: 60px; border-radius: 50%;
             background: var(--primary); color: white;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0, 191, 165, 0.4);
-            font-size: 24px; cursor: pointer; z-index: 25;
+            box-shadow: 0 6px 20px rgba(0, 150, 136, 0.4);
+            font-size: 30px; cursor: pointer; z-index: 40;
             transition: transform 0.2s;
         }
-        .fab:hover { transform: scale(1.1); }
+        #fab:hover { transform: scale(1.05); }
 
-        /* =========================================
-           SPECIFIC VIEWS
-           ========================================= */
-        /* Dashboard */
-        .balance-card { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
-        .stat-box { text-align: center; padding: 15px; background: #fff; border-radius: 8px; border: 1px solid #eee; }
-        
-        /* Transaction List */
+        /* Transaction Item */
         .tx-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 0; border-bottom: 1px solid #f0f0f0;
+            padding: 15px 0; border-bottom: 1px solid #eee;
         }
-        .tx-item:last-child { border-bottom: none; }
         .tx-icon {
-            width: 40px; height: 40px; border-radius: 50%;
+            width: 42px; height: 42px; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 18px; margin-right: 15px; flex-shrink: 0;
+            font-size: 20px; margin-right: 15px; flex-shrink: 0;
+            background: var(--bg-body);
         }
-        .tx-details { flex: 1; }
-        .tx-amount { font-weight: 600; text-align: right; }
-        .tx-amount.income { color: var(--success); }
-        .tx-amount.expense { color: var(--danger); }
-        .tx-amount.transfer { color: var(--info); }
-
-        /* Budget Bars */
-        .budget-row { margin-bottom: 15px; }
-        .budget-info { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
-        .progress-track { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
-
-        /* Charts (Pure CSS) */
-        .chart-pie {
-            width: 150px; height: 150px; border-radius: 50%;
-            margin: 0 auto; background: conic-gradient(#ddd 0% 100%);
-        }
-        .chart-container { text-align: center; padding: 20px 0; }
+        .tx-info { flex: 1; }
+        .tx-amount { font-weight: 700; font-size: 16px; }
+        .inc { color: var(--success); }
+        .exp { color: var(--text-main); }
 
         /* Modals */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); display: none;
             align-items: center; justify-content: center; z-index: 100;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(3px);
         }
         .modal-overlay.open { display: flex; }
         .modal {
             background: white; width: 90%; max-width: 500px;
-            border-radius: var(--radius); padding: 25px;
+            border-radius: 16px; padding: 25px;
             max-height: 90vh; overflow-y: auto;
-            animation: slideUp 0.3s ease;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Auth Screen */
+        #auth-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 200; display: flex;
+            flex-direction: column; align-items: center; justify-content: center;
+            padding: 30px; text-align: center;
+        }
+        .pin-dots { display: flex; gap: 15px; margin: 20px 0; }
+        .pin-dot { width: 15px; height: 15px; border-radius: 50%; background: #ddd; transition: 0.2s; }
+        .pin-dot.filled { background: var(--primary); transform: scale(1.2); }
+        
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; }
+        .num-btn { background: #f5f5f5; padding: 20px; font-size: 1.2rem; border-radius: 50%; width: 60px; height: 60px; margin: 0 auto; }
+        .num-btn:active { background: #e0e0e0; }
+
+        /* Analytics Bars */
+        .bar-container { margin-bottom: 15px; }
+        .bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+        .bar-track { height: 10px; background: #eee; border-radius: 5px; overflow: hidden; }
+        .bar-fill { height: 100%; background: var(--primary); border-radius: 5px; transition: width 1s ease; }
 
         /* Toast */
         #toast {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: #333; color: white; padding: 12px 24px;
-            border-radius: 24px; font-size: 14px; opacity: 0;
-            pointer-events: none; transition: opacity 0.3s; z-index: 200;
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            background: #323232; color: white; padding: 12px 24px;
+            border-radius: 24px; font-size: 14px; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s; z-index: 200;
         }
         #toast.show { opacity: 1; }
 
-        /* Responsive Breakpoints */
-        @media (max-width: 768px) {
-            aside { display: none; }
-            .mobile-nav { display: flex; }
-            main { padding-bottom: 80px; }
-            .fab { bottom: 90px; }
-            #app { flex-direction: column; }
-            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        /* =========================================
+           4. PRINT STYLES (A4)
+           ========================================= */
+        @media print {
+            aside, .mobile-nav, #fab, #toast, .no-print { display: none !important; }
+            body, #app, main { height: auto; overflow: visible; background: white; }
+            main { padding: 0; }
+            .card { box-shadow: none; border: none; padding: 0; margin: 0; }
+            
+            /* Print Header */
+            .print-header {
+                display: block !important;
+                border-bottom: 2px solid #333;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                text-align: center;
+            }
+            .print-table {
+                width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px;
+            }
+            .print-table th, .print-table td {
+                border: 1px solid #ddd; padding: 8px; text-align: left;
+            }
+            .print-table th { background: #f2f2f2; }
+            .text-right { text-align: right; }
         }
+        .print-header { display: none; }
+
     </style>
 </head>
 <body>
 
-<div id="app">
-    <!-- SIDEBAR NAVIGATION (Desktop) -->
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+    <div style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;">🔒</div>
+    <h2 id="auth-title">Setup Security PIN</h2>
+    <p id="auth-desc" class="text-sm">Create a 4-digit PIN to secure your wallet.</p>
+    
+    <div class="pin-dots">
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    
+    <div class="numpad">
+        <button class="num-btn" onclick="Auth.input(1)">1</button>
+        <button class="num-btn" onclick="Auth.input(2)">2</button>
+        <button class="num-btn" onclick="Auth.input(3)">3</button>
+        <button class="num-btn" onclick="Auth.input(4)">4</button>
+        <button class="num-btn" onclick="Auth.input(5)">5</button>
+        <button class="num-btn" onclick="Auth.input(6)">6</button>
+        <button class="num-btn" onclick="Auth.input(7)">7</button>
+        <button class="num-btn" onclick="Auth.input(8)">8</button>
+        <button class="num-btn" onclick="Auth.input(9)">9</button>
+        <button class="num-btn" style="visibility:hidden"></button>
+        <button class="num-btn" onclick="Auth.input(0)">0</button>
+        <button class="num-btn" onclick="Auth.clear()">⌫</button>
+    </div>
+</div>
+
+<!-- APP CONTAINER (Hidden until unlocked) -->
+<div id="app" style="display:none;">
+    
+    <!-- SIDEBAR -->
     <aside>
-        <h2 style="color: var(--primary); margin-bottom: 30px;">ProWallet</h2>
-        <div class="nav-item active" onclick="App.router('dashboard')">
+        <h2 style="color: var(--primary); margin-bottom: 40px;">ProWallet BD</h2>
+        <div class="nav-item active" onclick="Router.go('dashboard')">
             <span>📊</span> Dashboard
         </div>
-        <div class="nav-item" onclick="App.router('transactions')">
+        <div class="nav-item" onclick="Router.go('transactions')">
             <span>💳</span> Transactions
         </div>
-        <div class="nav-item" onclick="App.router('budget')">
-            <span>🎯</span> Budget & Plan
+        <div class="nav-item" onclick="Router.go('analytics')">
+            <span>📈</span> Analytics
         </div>
-        <div class="nav-item" onclick="App.router('analytics')">
-            <span>📈</span> Reports
-        </div>
-        <div class="nav-item" onclick="App.router('accounts')">
+        <div class="nav-item" onclick="Router.go('accounts')">
             <span>🏦</span> Accounts
         </div>
-        <div style="margin-top: auto;">
-            <div class="nav-item" onclick="App.openModal('settingsModal')">
-                <span>⚙️</span> Settings
-            </div>
+        <div class="nav-item" onclick="Router.go('settings')">
+            <span>⚙️</span> Settings
+        </div>
+        <div style="margin-top: auto; font-size: 12px; color: #999;">
+            v1.0.0 | Offline Mode
         </div>
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main id="main-view">
-        <!-- Views will be injected here via JS -->
+    <main id="main-container">
+        <!-- Print Header (Only visible on Print) -->
+        <div class="print-header">
+            <h2>Financial Report</h2>
+            <p id="print-date-range"></p>
+        </div>
+
+        <!-- Dynamic Content injected here -->
     </main>
 
-    <!-- FLOATING ACTION BUTTON -->
-    <div class="fab" onclick="App.prepareAddTxn()">+</div>
+    <!-- FAB -->
+    <div id="fab" onclick="Views.openAddModal()">+</div>
 
-    <!-- MOBILE BOTTOM NAV -->
+    <!-- MOBILE NAV -->
     <nav class="mobile-nav">
-        <div class="nav-item" onclick="App.router('dashboard')">📊</div>
-        <div class="nav-item" onclick="App.router('transactions')">💳</div>
-        <div class="nav-item" onclick="App.router('analytics')">📈</div>
-        <div class="nav-item" onclick="App.router('accounts')">🏦</div>
+        <div class="nav-item" onclick="Router.go('dashboard')">📊</div>
+        <div class="nav-item" onclick="Router.go('transactions')">💳</div>
+        <div class="nav-item" onclick="Router.go('analytics')">📈</div>
+        <div class="nav-item" onclick="Router.go('settings')">⚙️</div>
     </nav>
 
-    <!-- TOAST NOTIFICATION -->
-    <div id="toast">Action Successful</div>
+    <!-- TOAST -->
+    <div id="toast">Saved Successfully</div>
 
-    <!-- ================= MODALS ================= -->
+    <!-- MODALS -->
 
-    <!-- ADD TRANSACTION MODAL -->
-    <div id="txnModal" class="modal-overlay">
+    <!-- Add Transaction Modal -->
+    <div id="modal-txn" class="modal-overlay">
         <div class="modal">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                <h3>Add Transaction</h3>
-                <button class="btn-icon" onclick="App.closeModal('txnModal')">&times;</button>
+            <h3>Add Transaction</h3>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <button class="btn-outline" style="flex:1" id="btn-exp" onclick="Views.setTxType('expense')">Expense</button>
+                <button class="btn-outline" style="flex:1" id="btn-inc" onclick="Views.setTxType('income')">Income</button>
             </div>
-            
-            <div class="grid-2">
-                <button class="btn-outline" onclick="App.setTxType('expense')" id="btnTypeExp">Expense</button>
-                <button class="btn-outline" onclick="App.setTxType('income')" id="btnTypeInc">Income</button>
-            </div>
-            <div style="margin-top:10px; text-align:center;">
-                <button class="btn-outline" style="width:100%" onclick="App.setTxType('transfer')" id="btnTypeTrf">Transfer (Account to Account)</button>
-            </div>
-            <br>
-
-            <form id="txnForm" onsubmit="App.submitTransaction(event)">
+            <form onsubmit="Actions.addTransaction(event)">
                 <label class="text-sm">Amount (৳)</label>
-                <input type="number" id="tAmount" required min="0.01" step="0.01">
-
-                <div id="fieldAccountFrom">
-                    <label class="text-sm">Account (Pay From)</label>
-                    <select id="tFromAcc"></select>
-                </div>
-
-                <div id="fieldAccountTo" style="display:none;">
-                    <label class="text-sm">Account (Pay To / Receive)</label>
-                    <select id="tToAcc"></select>
-                </div>
-
-                <div id="fieldCategory">
-                    <label class="text-sm">Category</label>
-                    <select id="tCategory" onchange="App.updateSubCats()"></select>
-                    <label class="text-sm" style="margin-top:5px; display:block;">Sub-category</label>
-                    <select id="tSubCat"></select>
-                </div>
-
+                <input type="number" id="inp-amt" step="0.01" required placeholder="0.00">
+                
                 <label class="text-sm">Date</label>
-                <input type="date" id="tDate" required>
+                <input type="date" id="inp-date" required>
+
+                <label class="text-sm">Category</label>
+                <select id="inp-cat" onchange="Views.updateSubCats()"></select>
+
+                <label class="text-sm">Sub-category</label>
+                <select id="inp-sub"></select>
+
+                <label class="text-sm">Account</label>
+                <select id="inp-acc"></select>
 
                 <label class="text-sm">Note</label>
-                <input type="text" id="tNote" placeholder="Short description...">
+                <input type="text" id="inp-note" placeholder="Details...">
 
-                <button type="submit" class="btn-primary" style="width:100%">Save Transaction</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- ACCOUNT MODAL (Add/Edit) -->
-    <div id="accModal" class="modal-overlay">
-        <div class="modal">
-            <h3 id="accModalTitle">Add Account</h3>
-            <form onsubmit="App.saveAccount(event)">
-                <input type="hidden" id="accId">
-                <label class="text-sm">Account Name</label>
-                <input type="text" id="accName" required placeholder="e.g. bKash Personal">
-                
-                <label class="text-sm">Type</label>
-                <select id="accType">
-                    <option value="cash">Cash</option>
-                    <option value="bank">Bank</option>
-                    <option value="mobile">Mobile Wallet</option>
-                    <option value="card">Credit Card</option>
-                </select>
-
-                <label class="text-sm">Opening Balance</label>
-                <input type="number" id="accBalance" required step="0.01">
-
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button type="button" class="btn-outline" style="flex:1" onclick="App.closeModal('accModal')">Cancel</button>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button type="button" class="btn-outline" style="flex:1" onclick="Views.closeModals()">Cancel</button>
                     <button type="submit" class="btn-primary" style="flex:1">Save</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- BUDGET MODAL -->
-    <div id="budgetModal" class="modal-overlay">
-        <div class="modal">
-            <h3>Set Monthly Budget</h3>
-            <form onsubmit="App.saveBudget(event)">
-                <label class="text-sm">Month</label>
-                <input type="month" id="bMonth" required>
-                
-                <label class="text-sm">Category</label>
-                <select id="bCategory"></select>
-
-                <label class="text-sm">Limit Amount (৳)</label>
-                <input type="number" id="bAmount" required min="1">
-
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button type="button" class="btn-outline" style="flex:1" onclick="App.closeModal('budgetModal')">Cancel</button>
-                    <button type="submit" class="btn-primary" style="flex:1">Set Budget</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- SETTINGS MODAL -->
-    <div id="settingsModal" class="modal-overlay">
+    <!-- Settings/Export Modal -->
+    <div id="modal-settings" class="modal-overlay">
         <div class="modal">
             <h3>Settings & Data</h3>
-            <p class="text-sm">Manage your local data.</p>
-            <br>
-            <button class="btn-primary" style="width:100%; margin-bottom:10px;" onclick="App.exportData()">⬇️ Export Data (JSON)</button>
-            
-            <label class="text-sm">Import Data</label>
-            <input type="file" id="importFile" accept=".json" onchange="App.importData(this)">
-            
-            <hr style="margin: 20px 0; border:0; border-top:1px solid #eee;">
-            
-            <button class="btn-danger" style="width:100%" onclick="App.resetSystem()">⚠️ Reset All Data</button>
-            <br><br>
-            <button class="btn-outline" style="width:100%" onclick="App.closeModal('settingsModal')">Close</button>
+            <div style="display:grid; gap:15px;">
+                <button class="btn-outline" onclick="Actions.exportJSON()">⬇️ Backup Data (JSON)</button>
+                <button class="btn-outline" onclick="Actions.exportPrint()">🖨️ Print / PDF Report</button>
+                <button class="btn-danger" onclick="Actions.resetData()">⚠️ Reset All Data</button>
+                <button class="btn-outline" onclick="Auth.logout()">🔒 Lock App</button>
+                <button class="btn-outline" onclick="Views.closeModals()">Close</button>
+            </div>
         </div>
     </div>
 
@@ -391,654 +367,455 @@
 
 <script>
 /**
- * ProWallet - Personal Finance Manager
- * Architecture: State-Driven, Single Source of Truth, LocalStorage Persistence
+ * ProWallet BD - Core Application Logic
+ * Architecture: State-Driven | LocalStorage | Offline
  */
 
-const App = (function() {
-    
-    // ================= CONFIGURATION =================
-    const CONFIG = {
-        STORAGE_KEY: 'prowallet_db_v1',
-        CATEGORIES: {
-            "Food": ["Groceries", "Restaurant", "Snacks", "Beverages"],
-            "Transportation (BD)": ["Bus", "Train", "CNG", "Rickshaw", "Private Car", "Microbus", "Motorcycle", "Uber/Pathao"],
-            "Health & Wellness": ["Medicine", "Doctor", "Gym", "Insurance"],
-            "Home & Kitchen": ["Rent", "Utilities", "Groceries", "Furniture", "Repair"],
-            "Cleaning Supplies": ["Detergents", "Tissues", "Cleaners"],
-            "Baby Care": ["Diapers", "Food", "Clothes"],
-            "Personal Care": ["Toiletries", "Haircut", "Clothing"],
-            "Stationery & Office": ["Books", "Electronics", "Supplies"],
-            "Pet Care": ["Food", "Vet", "Accessories"],
-            "Vehicle Essentials": ["Fuel", "Service", "Parts"],
-            "Offers / Promotions": ["Discounts", "Cashback"],
-            "Income": ["Salary", "Freelance", "Gift", "Investment", "Other"]
+const CATEGORIES = {
+    "Transportation (Bangladesh)": ["Bus", "Train", "CNG / Auto Rickshaw", "Rickshaw", "Private Car", "Microbus", "Motorcycle", "Bicycle", "Launch / Ferry", "Ride Share (Uber / Pathao / Bolt)"],
+    "Food": ["Fruits & Vegetables", "Meat & Fish", "Cooking", "Sauces & Pickles", "Dairy & Eggs", "Breakfast", "Snacks", "Beverages", "Frozen & Canned", "Diabetic Food", "Ice Cream"],
+    "Cleaning Supplies": ["Dishwashing", "Laundry", "Toilet Cleaners", "Floor & Glass", "Air Fresheners", "Trash Bags", "Shoe Care"],
+    "Home & Kitchen": ["Kitchen Accessories", "Appliances", "Tools & Hardware", "Lights & Electrical", "Gardening", "Organizer"],
+    "Baby Care": ["Diapers", "Baby Food", "Skincare", "Oral Care", "Newborn Essentials"],
+    "Personal Care": ["Men's Care", "Women's Care", "Handwash", "Oral Care", "Skin Care", "Hair Products"],
+    "Stationery & Office": ["Writing", "Printing", "Paper Supplies", "Office Electronics", "School Supplies"],
+    "Pet Care": ["Cat Food", "Dog Food", "Grooming", "Accessories"],
+    "Health & Wellness": ["Medicines", "Supplements", "Medical Devices", "Antiseptics", "Masks & Safety"],
+    "Vehicle Essentials": ["Fuel", "Service", "Insurance", "Parking", "Toll", "Spare Parts"]
+};
+
+const DB_KEY = "wallet_app_v1";
+
+// Global State
+let State = {
+    accounts: [],
+    transactions: [],
+    preferences: { currency: "৳", pinHash: null, theme: "light" },
+    _unsavedChanges: false
+};
+
+// ================= UTILS =================
+const Utils = {
+    formatMoney: (num) => new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT' }).format(num),
+    uid: () => Date.now().toString(36) + Math.random().toString(36).substr(2),
+    save: () => {
+        localStorage.setItem(DB_KEY, JSON.stringify(State));
+    },
+    load: () => {
+        const data = localStorage.getItem(DB_KEY);
+        if (data) State = { ...State, ...JSON.parse(data) };
+        else {
+            // Default Data
+            State.accounts = [
+                { id: 'def1', name: 'Cash Wallet', type: 'Cash', balance: 0 },
+                { id: 'def2', name: 'bKash Personal', type: 'Mobile', balance: 0 }
+            ];
+            State.transactions = [];
         }
-    };
+    },
+    hashPin: async (pin) => {
+        const msgBuffer = new TextEncoder().encode(pin);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+};
 
-    // ================= STATE =================
-    let state = {
-        accounts: [],
-        transactions: [],
-        budgets: [], // { id, month, category, amount }
-        preferences: { currency: '৳' }
-    };
-
-    // ================= HELPERS =================
-    const utils = {
-        uid: () => Date.now().toString(36) + Math.random().toString(36).substr(2),
-        
-        formatMoney: (amount) => {
-            return new Intl.NumberFormat('en-BD', { 
-                style: 'currency', 
-                currency: 'BDT',
-                minimumFractionDigits: 2 
-            }).format(amount);
-        },
-
-        formatDate: (dateStr) => {
-            if(!dateStr) return '';
-            const [y, m, d] = dateStr.split('-');
-            return `${d}-${m}-${y}`; // BD Standard
-        },
-
-        save: () => {
-            localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(state));
-        },
-
-        load: () => {
-            const data = localStorage.getItem(CONFIG.STORAGE_KEY);
-            if (data) {
-                const parsed = JSON.parse(data);
-                state = { ...state, ...parsed }; // Merge to ensure structure integrity
-            } else {
-                // Seed Initial Data
-                state.accounts = [
-                    { id: 'acc1', name: 'Cash Wallet', type: 'cash', openingBalance: 5000 },
-                    { id: 'acc2', name: 'bKash', type: 'mobile', openingBalance: 1250.50 }
-                ];
-            }
-        },
-
-        getToday: () => new Date().toISOString().split('T')[0],
-        getCurrentMonth: () => new Date().toISOString().slice(0, 7)
-    };
-
-    // ================= CORE LOGIC =================
+// ================= SECURITY =================
+const Auth = {
+    inputBuffer: '',
     
-    // Calculate current balances based on transactions
-    function recalculateBalances() {
-        // Reset to opening
-        const balances = {};
-        state.accounts.forEach(acc => {
-            balances[acc.id] = parseFloat(acc.openingBalance);
+    check: async () => {
+        if (State.preferences.pinHash) {
+            // Lock Mode
+            document.getElementById('auth-title').innerText = "Enter PIN to Unlock";
+            document.getElementById('auth-desc').innerText = "Secure Access";
+        } else {
+            // Setup Mode
+            document.getElementById('auth-title').innerText = "Setup New PIN";
+            document.getElementById('auth-desc').innerText = "Create a 4-digit PIN for protection";
+        }
+    },
+
+    input: (num) => {
+        if (Auth.inputBuffer.length < 4) {
+            Auth.inputBuffer += num;
+            Auth.updateDots();
+        }
+        if (Auth.inputBuffer.length === 4) Auth.process();
+    },
+
+    clear: () => {
+        Auth.inputBuffer = '';
+        Auth.updateDots();
+    },
+
+    updateDots: () => {
+        const dots = document.querySelectorAll('.pin-dot');
+        dots.forEach((d, i) => {
+            if (i < Auth.inputBuffer.length) d.classList.add('filled');
+            else d.classList.remove('filled');
         });
+    },
 
-        // Apply transactions
-        state.transactions.forEach(tx => {
-            const amt = parseFloat(tx.amount);
-            if (tx.type === 'expense' || tx.type === 'transfer') {
-                if (balances[tx.fromAccount] !== undefined) {
-                    balances[tx.fromAccount] -= amt;
-                }
-            }
-            if (tx.type === 'income' || tx.type === 'transfer') {
-                if (balances[tx.toAccount] !== undefined) {
-                    balances[tx.toAccount] += amt;
-                }
-            }
-        });
-
-        return balances;
-    }
-
-    function getFilteredTransactions(monthFilter = null) {
-        if (!monthFilter) return state.transactions;
-        return state.transactions.filter(tx => tx.date.startsWith(monthFilter));
-    }
-
-    // ================= RENDER FUNCTIONS =================
-
-    function renderDashboard() {
-        const currentBalances = recalculateBalances();
-        const totalBalance = Object.values(currentBalances).reduce((a,b) => a+b, 0);
-        const currentMonth = utils.getCurrentMonth();
-        const monthTxs = getFilteredTransactions(currentMonth);
+    process: async () => {
+        const hash = await Utils.hashPin(Auth.inputBuffer);
         
-        let income = 0, expense = 0;
-        monthTxs.forEach(tx => {
-            const amt = parseFloat(tx.amount);
-            if(tx.type === 'income') income += amt;
-            if(tx.type === 'expense') expense += amt;
+        if (!State.preferences.pinHash) {
+            // Set PIN
+            State.preferences.pinHash = hash;
+            Utils.save();
+            Auth.unlock();
+        } else {
+            // Verify PIN
+            if (hash === State.preferences.pinHash) {
+                Auth.unlock();
+            } else {
+                document.getElementById('auth-title').innerText = "Incorrect PIN";
+                document.getElementById('auth-title').style.color = "var(--danger)";
+                setTimeout(() => {
+                    Auth.clear();
+                    document.getElementById('auth-title').innerText = "Enter PIN to Unlock";
+                    document.getElementById('auth-title').style.color = "var(--text-main)";
+                }, 1000);
+            }
+        }
+    },
+
+    unlock: () => {
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        Router.init();
+    },
+
+    logout: () => {
+        location.reload(); // Simple reload to lock
+    }
+};
+
+// ================= ACTIONS =================
+const Actions = {
+    addTransaction: (e) => {
+        e.preventDefault();
+        const type = document.getElementById('btn-exp').classList.contains('active') ? 'expense' : 'income';
+        const amt = parseFloat(document.getElementById('inp-amt').value);
+        const accId = document.getElementById('inp-acc').value;
+        const date = document.getElementById('inp-date').value;
+        const cat = document.getElementById('inp-cat').value;
+        const sub = document.getElementById('inp-sub').value;
+        const note = document.getElementById('inp-note').value;
+
+        // Update Account Balance
+        const accIndex = State.accounts.findIndex(a => a.id === accId);
+        if (accIndex > -1) {
+            if (type === 'expense') State.accounts[accIndex].balance -= amt;
+            else State.accounts[accIndex].balance += amt;
+        }
+
+        // Save Transaction
+        State.transactions.unshift({
+            id: Utils.uid(),
+            date, type, amount: amt, category: cat, subcategory: sub, accountId: accId, note
         });
 
-        const recentTx = [...state.transactions]
-            .sort((a,b) => new Date(b.date) - new Date(a.date))
-            .slice(0, 5);
+        Utils.save();
+        Views.closeModals();
+        Router.refresh();
+    },
 
-        return `
-            <div class="card balance-card">
-                <h3>Total Balance</h3>
-                <div class="text-lg currency">${utils.formatMoney(totalBalance)}</div>
-                <div class="text-sm" style="opacity:0.8; margin-top:10px;">As of Today</div>
-            </div>
+    addAccount: () => {
+        const name = prompt("Account Name (e.g., Bank Asia):");
+        if (!name) return;
+        State.accounts.push({ id: Utils.uid(), name, type: 'Bank', balance: 0 });
+        Utils.save();
+        Router.refresh();
+    },
 
-            <div class="grid-3">
-                <div class="stat-box">
-                    <div class="text-sm">Income</div>
-                    <div style="color:var(--success); font-weight:bold;">${utils.formatMoney(income)}</div>
-                </div>
-                <div class="stat-box">
-                    <div class="text-sm">Expense</div>
-                    <div style="color:var(--danger); font-weight:bold;">${utils.formatMoney(expense)}</div>
-                </div>
-                <div class="stat-box">
-                    <div class="text-sm">Net Savings</div>
-                    <div style="color:var(--text-main); font-weight:bold;">${utils.formatMoney(income - expense)}</div>
-                </div>
-            </div>
+    deleteTx: (id) => {
+        if(!confirm("Delete this record?")) return;
+        const tx = State.transactions.find(t => t.id === id);
+        
+        // Refund Balance
+        const accIndex = State.accounts.findIndex(a => a.id === tx.accountId);
+        if (accIndex > -1) {
+            if (tx.type === 'expense') State.accounts[accIndex].balance += tx.amount;
+            else State.accounts[accIndex].balance -= tx.amount;
+        }
 
-            <h3 style="margin-top:30px;">Recent Transactions</h3>
-            <div class="card">
-                ${generateTxListHTML(recentTx)}
-                ${recentTx.length === 0 ? '<p class="text-sm" style="text-align:center">No transactions yet.</p>' : ''}
-            </div>
-        `;
+        State.transactions = State.transactions.filter(t => t.id !== id);
+        Utils.save();
+        Router.refresh();
+    },
+
+    resetData: () => {
+        if(confirm("DANGER: This will WIPE ALL DATA. Are you sure?")) {
+            localStorage.removeItem(DB_KEY);
+            location.reload();
+        }
+    },
+
+    exportJSON: () => {
+        const str = JSON.stringify(State);
+        const blob = new Blob([str], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+    },
+
+    exportPrint: () => {
+        // Render Print View then trigger print
+        Views.closeModals();
+        Views.renderPrintView();
+        setTimeout(() => window.print(), 500);
     }
+};
 
-    function renderTransactions() {
-        // Sort desc by date
-        const sorted = [...state.transactions].sort((a,b) => new Date(b.date) - new Date(a.date));
-        return `
-            <h2>Transactions</h2>
-            <input type="text" placeholder="🔍 Search transactions..." onkeyup="App.filterTxns(this.value)" style="max-width:400px">
+// ================= VIEWS =================
+const Views = {
+    currentTxType: 'expense',
+
+    setTxType: (type) => {
+        Views.currentTxType = type;
+        document.getElementById('btn-exp').classList.toggle('active', type === 'expense');
+        document.getElementById('btn-inc').classList.toggle('active', type === 'income');
+        
+        document.getElementById('btn-exp').style.background = type === 'expense' ? 'var(--primary)' : 'transparent';
+        document.getElementById('btn-exp').style.color = type === 'expense' ? 'white' : 'inherit';
+        
+        document.getElementById('btn-inc').style.background = type === 'income' ? 'var(--success)' : 'transparent';
+        document.getElementById('btn-inc').style.color = type === 'income' ? 'white' : 'inherit';
+    },
+
+    openAddModal: () => {
+        // Populate Selects
+        const selCat = document.getElementById('inp-cat');
+        selCat.innerHTML = '<option value="">Select Category</option>';
+        Object.keys(CATEGORIES).forEach(k => selCat.add(new Option(k, k)));
+
+        const selAcc = document.getElementById('inp-acc');
+        selAcc.innerHTML = '';
+        State.accounts.forEach(a => selAcc.add(new Option(`${a.name} (${Utils.formatMoney(a.balance)})`, a.id)));
+
+        document.getElementById('inp-date').valueAsDate = new Date();
+        Views.setTxType('expense');
+        
+        document.getElementById('modal-txn').classList.add('open');
+    },
+
+    updateSubCats: () => {
+        const cat = document.getElementById('inp-cat').value;
+        const selSub = document.getElementById('inp-sub');
+        selSub.innerHTML = '';
+        if(cat && CATEGORIES[cat]) {
+            CATEGORIES[cat].forEach(s => selSub.add(new Option(s, s)));
+        }
+    },
+
+    closeModals: () => {
+        document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('open'));
+        // If we closed print view (which replaces main content), reload dashboard
+        if(document.getElementById('print-header').style.display === 'block') {
+            Router.go('dashboard');
+        }
+    },
+
+    renderDashboard: () => {
+        const total = State.accounts.reduce((sum, a) => sum + a.balance, 0);
+        const recent = State.transactions.slice(0, 5);
+        
+        let html = `
+            <div class="card" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color:white;">
+                <div class="text-sm">Total Balance</div>
+                <div class="text-lg currency" style="margin: 10px 0;">${Utils.formatMoney(total)}</div>
+                <div class="text-sm" style="opacity:0.8">Overview of all accounts</div>
+            </div>
+
+            <h3>Accounts</h3>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:15px; margin-bottom:25px;">
+                ${State.accounts.map(a => `
+                    <div class="card" style="margin:0; padding:15px;">
+                        <div class="text-sm">${a.name}</div>
+                        <div style="font-weight:bold; font-size:1.1rem;">${Utils.formatMoney(a.balance)}</div>
+                    </div>
+                `).join('')}
+                <div class="card" style="margin:0; padding:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px dashed #ccc;" onclick="Actions.addAccount()">
+                    + Add
+                </div>
+            </div>
+
+            <h3>Recent Transactions</h3>
             <div class="card" style="padding:0 20px;">
-                <div id="txnListContainer">
-                    ${generateTxListHTML(sorted)}
-                </div>
+                ${recent.length ? '' : '<p style="padding:20px 0; color:#999;">No transactions found.</p>'}
+                ${recent.map(t => Views.txItem(t)).join('')}
             </div>
         `;
-    }
+        document.getElementById('main-container').innerHTML = html;
+    },
 
-    function generateTxListHTML(txs) {
-        if(txs.length === 0) return '<p style="padding:20px; text-align:center; color:#999">No records found.</p>';
-        
-        return txs.map(tx => {
-            let icon = '📄';
-            let colorClass = '';
-            
-            if(tx.type === 'income') { icon = '💰'; colorClass = 'income'; }
-            else if(tx.type === 'expense') { icon = '🛍️'; colorClass = 'expense'; }
-            else { icon = '↔️'; colorClass = 'transfer'; }
+    renderTransactions: () => {
+        const list = State.transactions;
+        let html = `<h2>All Transactions</h2><div class="card" style="padding:0 20px;">`;
+        html += list.length ? '' : '<p style="padding:20px 0; color:#999;">No records.</p>';
+        html += list.map(t => Views.txItem(t)).join('');
+        html += `</div>`;
+        document.getElementById('main-container').innerHTML = html;
+    },
 
-            let accName = tx.fromAccount ? getAccountName(tx.fromAccount) : getAccountName(tx.toAccount);
-            if(tx.type === 'transfer') accName = `${getAccountName(tx.fromAccount)} → ${getAccountName(tx.toAccount)}`;
-
-            return `
+    txItem: (t) => {
+        const isExp = t.type === 'expense';
+        const colorClass = isExp ? 'exp' : 'inc';
+        const sign = isExp ? '-' : '+';
+        const accName = State.accounts.find(a => a.id === t.accountId)?.name || 'Unknown';
+        return `
             <div class="tx-item">
                 <div style="display:flex; align-items:center;">
-                    <div class="tx-icon" style="background:#f0f0f0;">${icon}</div>
-                    <div class="tx-details">
-                        <div style="font-weight:500;">${tx.note || tx.category}</div>
-                        <div class="text-sm">${tx.subcategory || tx.category} • ${utils.formatDate(tx.date)}</div>
+                    <div class="tx-icon">💳</div>
+                    <div class="tx-info">
+                        <div style="font-weight:600;">${t.category}</div>
+                        <div class="text-sm">${t.subcategory} • ${t.date}</div>
                         <div class="text-sm" style="font-size:11px;">${accName}</div>
                     </div>
                 </div>
-                <div class="tx-amount ${colorClass}">
-                    ${tx.type === 'expense' || tx.type === 'transfer' ? '-' : '+'} ${utils.formatMoney(tx.amount)}
+                <div style="text-align:right;">
+                    <div class="tx-amount ${colorClass}">${sign} ${Utils.formatMoney(t.amount)}</div>
+                    <button class="btn-icon" style="font-size:14px;" onclick="Actions.deleteTx('${t.id}')">🗑️</button>
                 </div>
             </div>
-            `;
-        }).join('');
-    }
+        `;
+    },
 
-    function renderAccounts() {
-        const balances = recalculateBalances();
-        return `
-            <h2>My Accounts</h2>
-            <button class="btn-primary" onclick="App.prepareAddAcc()" style="margin-bottom:20px;">+ Add Account</button>
-            <div class="grid-2">
-                ${state.accounts.map(acc => `
-                    <div class="card" style="margin-bottom:0;">
-                        <div style="display:flex; justify-content:space-between;">
-                            <span class="text-sm">${acc.type.toUpperCase()}</span>
-                            <div>
-                                <button class="btn-icon" style="font-size:14px;" onclick="App.deleteAcc('${acc.id}')">🗑️</button>
+    renderAnalytics: () => {
+        // Group by category
+        const cats = {};
+        let totalExp = 0;
+        State.transactions.filter(t => t.type === 'expense').forEach(t => {
+            cats[t.category] = (cats[t.category] || 0) + t.amount;
+            totalExp += t.amount;
+        });
+
+        let html = `<h2>Expense Analytics</h2><div class="card">`;
+        
+        if(totalExp === 0) html += `<p class="text-sm">No expense data.</p>`;
+        else {
+            Object.entries(cats)
+                .sort((a,b) => b[1] - a[1])
+                .forEach(([cat, amt]) => {
+                    const pct = ((amt / totalExp) * 100).toFixed(1);
+                    html += `
+                        <div class="bar-container">
+                            <div class="bar-label">
+                                <span>${cat}</span>
+                                <span>${Utils.formatMoney(amt)} (${pct}%)</span>
+                            </div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width:${pct}%"></div>
                             </div>
                         </div>
-                        <div style="font-weight:600; font-size:1.1rem; margin:10px 0;">${acc.name}</div>
-                        <div class="text-lg currency">${utils.formatMoney(balances[acc.id])}</div>
-                        <div class="text-sm">Opening: ${utils.formatMoney(acc.openingBalance)}</div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-
-    function renderBudget() {
-        const currentMonth = utils.getCurrentMonth();
-        const monthBudgets = state.budgets.filter(b => b.month === currentMonth);
-        
-        // Calculate usage
-        const monthTxs = state.transactions.filter(t => t.date.startsWith(currentMonth) && t.type === 'expense');
-        const usage = {};
-        monthTxs.forEach(t => {
-            usage[t.category] = (usage[t.category] || 0) + parseFloat(t.amount);
-        });
-
-        return `
-            <h2>Budget Plan (${currentMonth})</h2>
-            <button class="btn-primary" onclick="App.openBudgetModal('${currentMonth}')" style="margin-bottom:20px;">+ Set Budget</button>
-            
-            ${monthBudgets.length === 0 ? '<p class="text-sm">No budgets set for this month.</p>' : ''}
-
-            <div class="card">
-                ${monthBudgets.map(b => {
-                    const used = usage[b.category] || 0;
-                    const percent = Math.min(100, (used / b.amount) * 100).toFixed(1);
-                    let color = 'var(--success)';
-                    if(percent >= 80) color = 'var(--warning)';
-                    if(percent >= 100) color = 'var(--danger)';
-
-                    return `
-                    <div class="budget-row">
-                        <div class="budget-info">
-                            <span>${b.category}</span>
-                            <span>${utils.formatMoney(used)} / ${utils.formatMoney(b.amount)}</span>
-                        </div>
-                        <div class="progress-track">
-                            <div class="progress-fill" style="width:${percent}%; background:${color};"></div>
-                        </div>
-                        <div class="text-sm" style="margin-top:5px; text-align:right;">${percent}% Used</div>
-                    </div>
                     `;
-                }).join('')}
+                });
+        }
+        html += `</div>`;
+        document.getElementById('main-container').innerHTML = html;
+    },
+
+    renderAccounts: () => {
+        let html = `<h2>Accounts Management</h2>
+            <button class="btn-primary" onclick="Actions.addAccount()" style="margin-bottom:20px;">+ New Account</button>
+            <div class="card" style="padding:0;">
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr style="background:#f9f9f9; text-align:left;">
+                        <th style="padding:15px;">Name</th>
+                        <th style="padding:15px;">Balance</th>
+                    </tr>
+                    ${State.accounts.map(a => `
+                        <tr style="border-bottom:1px solid #eee;">
+                            <td style="padding:15px;">${a.name}</td>
+                            <td style="padding:15px; font-weight:bold;">${Utils.formatMoney(a.balance)}</td>
+                        </tr>
+                    `).join('')}
+                </table>
             </div>
         `;
-    }
+        document.getElementById('main-container').innerHTML = html;
+    },
 
-    function renderAnalytics() {
-        // Simple CSS Charts
-        const currentMonth = utils.getCurrentMonth();
-        const expenses = state.transactions.filter(t => t.date.startsWith(currentMonth) && t.type === 'expense');
-        const totalExp = expenses.reduce((a,b) => a + parseFloat(b.amount), 0);
+    renderSettings: () => {
+        document.getElementById('modal-settings').classList.add('open');
+    },
 
-        // Category Breakdown for Pie
-        const catTotals = {};
-        expenses.forEach(t => { catTotals[t.category] = (catTotals[t.category]||0) + parseFloat(t.amount); });
+    renderPrintView: () => {
+        const date = new Date();
+        document.getElementById('print-date-range').innerText = `Generated on: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
         
-        // Generate Conic Gradient String
-        let gradientStr = '';
-        let currentDeg = 0;
-        const colors = ['#00BFA5', '#FF7675', '#FDCB6E', '#0984e3', '#6c5ce7', '#fd79a8'];
-        let pieHTML = '';
-
-        Object.entries(catTotals).forEach(([cat, amt], index) => {
-            const pct = (amt / totalExp) * 100;
-            const deg = (amt / totalExp) * 360;
-            const color = colors[index % colors.length];
-            
-            gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
-            currentDeg += deg;
-
-            pieHTML += `
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;">
-                    <span style="display:flex; align-items:center;">
-                        <span style="width:10px; height:10px; background:${color}; border-radius:50%; display:inline-block; margin-right:5px;"></span>
-                        ${cat}
-                    </span>
-                    <span>${utils.formatMoney(amt)} (${pct.toFixed(1)}%)</span>
-                </div>
+        // Generate Table
+        let rows = State.transactions.map(t => {
+            const acc = State.accounts.find(a => a.id === t.accountId)?.name;
+            return `
+                <tr>
+                    <td>${t.date}</td>
+                    <td>${t.type.toUpperCase()}</td>
+                    <td>${t.category}</td>
+                    <td>${t.subcategory}</td>
+                    <td>${acc}</td>
+                    <td>${t.note}</td>
+                    <td class="text-right">${t.type==='exp'?'-':''}${t.amount}</td>
+                </tr>
             `;
-        });
-        
-        const pieStyle = `background: conic-gradient(${gradientStr.slice(0, -2)});`;
+        }).join('');
 
-        return `
-            <h2>Analytics (${currentMonth})</h2>
-            <div class="grid-2">
-                <div class="card">
-                    <h3>Expense Breakdown</h3>
-                    ${totalExp > 0 ? `
-                        <div class="chart-container">
-                            <div class="chart-pie" style="${pieStyle}"></div>
-                        </div>
-                        <div style="margin-top:15px;">${pieHTML}</div>
-                    ` : '<p class="text-sm">No data to show.</p>'}
-                </div>
-                <div class="card">
-                    <h3>Summary</h3>
-                    <div style="margin-bottom:15px;">
-                        <span class="text-sm">Total Expenses</span><br>
-                        <span class="text-lg currency" style="color:var(--danger)">${utils.formatMoney(totalExp)}</span>
-                    </div>
-                    <div>
-                        <span class="text-sm">Transaction Count</span><br>
-                        <span class="text-lg">${expenses.length}</span>
-                    </div>
+        const html = `
+            <div style="padding:20px;">
+                <h3 style="text-align:center; margin-top:0;">Transaction Report</h3>
+                <table class="print-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th><th>Type</th><th>Category</th><th>Sub</th><th>Account</th><th>Note</th><th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <div style="text-align:center; margin-top:30px; font-size:12px; color:#999;">
+                    Generated by ProWallet BD Offline
                 </div>
             </div>
         `;
+        document.getElementById('main-container').innerHTML = html;
+        document.getElementById('fab').style.display = 'none'; // Hide FAB for print
     }
+};
 
-    function getAccountName(id) {
-        const acc = state.accounts.find(a => a.id === id);
-        return acc ? acc.name : 'Unknown Account';
-    }
-
-    // ================= UI ACTIONS =================
-
-    function router(viewName) {
-        const main = document.getElementById('main-view');
+// ================= ROUTER =================
+const Router = {
+    go: (route) => {
+        // Update Nav UI
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        // Very simple mapping for demo
+        // Highlighting logic skipped for brevity in single file, but route works
         
-        // Highlight nav
-        // Note: simple logic for demo, ideally matches by data-attribute
-        
-        if(viewName === 'dashboard') main.innerHTML = renderDashboard();
-        else if(viewName === 'transactions') main.innerHTML = renderTransactions();
-        else if(viewName === 'accounts') main.innerHTML = renderAccounts();
-        else if(viewName === 'budget') main.innerHTML = renderBudget();
-        else if(viewName === 'analytics') main.innerHTML = renderAnalytics();
+        if(route === 'dashboard') Views.renderDashboard();
+        if(route === 'transactions') Views.renderTransactions();
+        if(route === 'analytics') Views.renderAnalytics();
+        if(route === 'accounts') Views.renderAccounts();
+        if(route === 'settings') Views.renderSettings();
+    },
 
-        // Mobile active state
-        const mobileItems = document.querySelectorAll('.mobile-nav .nav-item');
-        const map = { 'dashboard':0, 'transactions':1, 'analytics':2, 'accounts':3 };
-        if(mobileItems[map[viewName]]) mobileItems[map[viewName]].classList.add('active');
-    }
-
-    function openModal(id) {
-        document.getElementById(id).classList.add('open');
-    }
+    init: () => {
+        Router.go('dashboard');
+    },
     
-    function closeModal(id) {
-        document.getElementById(id).classList.remove('open');
+    refresh: () => {
+        const currentHash = window.location.hash || '#dashboard';
+        Router.go(currentHash.replace('#', ''));
     }
+};
 
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 3000);
-    }
-
-    // ================= FORM HANDLING =================
-
-    let currentTxType = 'expense';
-
-    function setTxType(type) {
-        currentTxType = type;
-        
-        // UI toggles
-        document.getElementById('btnTypeExp').style.background = type==='expense' ? 'var(--primary)' : 'transparent';
-        document.getElementById('btnTypeExp').style.color = type==='expense' ? 'white' : 'var(--text-main)';
-        
-        document.getElementById('btnTypeInc').style.background = type==='income' ? 'var(--primary)' : 'transparent';
-        document.getElementById('btnTypeInc').style.color = type==='income' ? 'white' : 'var(--text-main)';
-
-        document.getElementById('btnTypeTrf').style.background = type==='transfer' ? 'var(--primary)' : 'transparent';
-        document.getElementById('btnTypeTrf').style.color = type==='transfer' ? 'white' : 'var(--text-main)';
-
-        // Field visibility
-        const divFrom = document.getElementById('fieldAccountFrom');
-        const divTo = document.getElementById('fieldAccountTo');
-        const divCat = document.getElementById('fieldCategory');
-
-        if (type === 'transfer') {
-            divFrom.style.display = 'block';
-            divTo.style.display = 'block';
-            divCat.style.display = 'none';
-        } else if (type === 'income') {
-            divFrom.style.display = 'none';
-            divTo.style.display = 'block';
-            divCat.style.display = 'block';
-        } else { // expense
-            divFrom.style.display = 'block';
-            divTo.style.display = 'none';
-            divCat.style.display = 'block';
-        }
-    }
-
-    function prepareAddTxn() {
-        // Populate accounts
-        const selFrom = document.getElementById('tFromAcc');
-        const selTo = document.getElementById('tToAcc');
-        selFrom.innerHTML = ''; selTo.innerHTML = '';
-        
-        state.accounts.forEach(acc => {
-            selFrom.add(new Option(`${acc.name} (${utils.formatMoney(recalculateBalances()[acc.id])})`, acc.id));
-            selTo.add(new Option(`${acc.name}`, acc.id));
-        });
-
-        // Populate Categories
-        const selCat = document.getElementById('tCategory');
-        selCat.innerHTML = '<option value="">Select Category</option>';
-        Object.keys(CONFIG.CATEGORIES).forEach(c => {
-            selCat.add(new Option(c, c));
-        });
-
-        document.getElementById('tDate').value = utils.getToday();
-        document.getElementById('tAmount').value = '';
-        document.getElementById('tNote').value = '';
-        
-        setTxType('expense'); // Default
-        openModal('txnModal');
-    }
-
-    function updateSubCats() {
-        const cat = document.getElementById('tCategory').value;
-        const subSel = document.getElementById('tSubCat');
-        subSel.innerHTML = '';
-        
-        if(cat && CONFIG.CATEGORIES[cat]) {
-            CONFIG.CATEGORIES[cat].forEach(sub => {
-                subSel.add(new Option(sub, sub));
-            });
-        }
-    }
-
-    function submitTransaction(e) {
-        e.preventDefault();
-        const amt = parseFloat(document.getElementById('tAmount').value);
-        const date = document.getElementById('tDate').value;
-        const note = document.getElementById('tNote').value;
-        const cat = document.getElementById('tCategory').value;
-        const sub = document.getElementById('tSubCat').value;
-
-        let newTx = {
-            id: utils.uid(),
-            type: currentTxType,
-            amount: amt,
-            date: date,
-            note: note,
-            createdAt: Date.now()
-        };
-
-        if (currentTxType === 'transfer') {
-            newTx.fromAccount = document.getElementById('tFromAcc').value;
-            newTx.toAccount = document.getElementById('tToAcc').value;
-            newTx.category = 'Transfer';
-            newTx.subcategory = 'Fund Transfer';
-            
-            // Validation: Can't transfer to self
-            if(newTx.fromAccount === newTx.toAccount) {
-                showToast("Cannot transfer to same account");
-                return;
-            }
-        } else if (currentTxType === 'income') {
-            newTx.toAccount = document.getElementById('tToAcc').value;
-            newTx.fromAccount = null;
-            newTx.category = cat || 'Income';
-            newTx.subcategory = sub;
-        } else { // expense
-            newTx.fromAccount = document.getElementById('tFromAcc').value;
-            newTx.toAccount = null;
-            newTx.category = cat;
-            newTx.subcategory = sub;
-
-            // Negative balance check
-            const balances = recalculateBalances();
-            if(balances[newTx.fromAccount] < amt) {
-                if(!confirm("Warning: Insufficient funds in source account. Continue anyway?")) return;
-            }
-        }
-
-        state.transactions.push(newTx);
-        utils.save();
-        closeModal('txnModal');
-        showToast("Transaction Saved");
-        router('dashboard'); // Refresh
-    }
-
-    // ================= ACCOUNT LOGIC =================
-    function prepareAddAcc() {
-        document.getElementById('accId').value = '';
-        document.getElementById('accName').value = '';
-        document.getElementById('accBalance').value = '';
-        document.getElementById('accModalTitle').innerText = "Add Account";
-        openModal('accModal');
-    }
-
-    function saveAccount(e) {
-        e.preventDefault();
-        const id = document.getElementById('accId').value;
-        const name = document.getElementById('accName').value;
-        const type = document.getElementById('accType').value;
-        const bal = document.getElementById('accBalance').value;
-
-        if(id) {
-            // Edit (Not fully implemented in UI for brevity, but logic ready)
-            const acc = state.accounts.find(a => a.id === id);
-            if(acc) { acc.name = name; acc.type = type; acc.openingBalance = bal; }
-        } else {
-            // Create
-            state.accounts.push({
-                id: utils.uid(),
-                name: name,
-                type: type,
-                openingBalance: parseFloat(bal)
-            });
-        }
-        utils.save();
-        closeModal('accModal');
-        router('accounts');
-        showToast("Account Saved");
-    }
-
-    function deleteAcc(id) {
-        const hasTx = state.transactions.some(t => t.fromAccount === id || t.toAccount === id);
-        if(hasTx) {
-            showToast("Cannot delete: Account has history.");
-            return;
-        }
-        if(confirm("Delete this account?")) {
-            state.accounts = state.accounts.filter(a => a.id !== id);
-            utils.save();
-            router('accounts');
-        }
-    }
-
-    // ================= BUDGET LOGIC =================
-    function openBudgetModal(month) {
-        document.getElementById('bMonth').value = month;
-        const sel = document.getElementById('bCategory');
-        sel.innerHTML = '';
-        Object.keys(CONFIG.CATEGORIES).forEach(c => {
-            if(c !== 'Income') sel.add(new Option(c, c));
-        });
-        document.getElementById('bAmount').value = '';
-        openModal('budgetModal');
-    }
-
-    function saveBudget(e) {
-        e.preventDefault();
-        const month = document.getElementById('bMonth').value;
-        const cat = document.getElementById('bCategory').value;
-        const amt = parseFloat(document.getElementById('bAmount').value);
-
-        // Remove existing if any
-        state.budgets = state.budgets.filter(b => !(b.month === month && b.category === cat));
-        
-        state.budgets.push({
-            id: utils.uid(),
-            month, category: cat, amount: amt
-        });
-        
-        utils.save();
-        closeModal('budgetModal');
-        router('budget');
-        showToast("Budget Saved");
-    }
-
-    // ================= DATA MANAGEMENT =================
-    function exportData() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "prowallet_backup_" + new Date().toISOString() + ".json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    }
-
-    function importData(input) {
-        const file = input.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = JSON.parse(e.target.result);
-                if(data.accounts && data.transactions) {
-                    state = data;
-                    utils.save();
-                    showToast("Data Imported Successfully");
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    alert("Invalid file format");
-                }
-            } catch(err) {
-                alert("Error parsing file");
-            }
-        };
-        reader.readAsText(file);
-    }
-
-    function resetSystem() {
-        if(confirm("DANGER: This will wipe all your data permanently. Are you sure?")) {
-            localStorage.removeItem(CONFIG.STORAGE_KEY);
-            location.reload();
-        }
-    }
-
-    function filterTxns(query) {
-        const term = query.toLowerCase();
-        const sorted = [...state.transactions]
-            .sort((a,b) => new Date(b.date) - new Date(a.date))
-            .filter(t => 
-                (t.note && t.note.toLowerCase().includes(term)) || 
-                t.category.toLowerCase().includes(term) ||
-                t.subcategory.toLowerCase().includes(term)
-            );
-        document.getElementById('txnListContainer').innerHTML = generateTxListHTML(sorted);
-    }
-
-    // ================= INIT =================
-    function init() {
-        utils.load();
-        router('dashboard');
-    }
-
-    // Public API
-    return {
-        init, router, openModal, closeModal, setTxType, updateSubCats, submitTransaction,
-        prepareAddTxn, prepareAddAcc, saveAccount, deleteAcc, openBudgetModal, saveBudget,
-        exportData, importData, resetSystem, filterTxns
-    };
-
-})();
-
-// Start App
-window.addEventListener('DOMContentLoaded', App.init);
+// ================= INITIALIZATION =================
+window.onload = async () => {
+    Utils.load();
+    await Auth.check();
+};
 
 </script>
 </body>
