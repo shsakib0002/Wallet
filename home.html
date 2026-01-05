@@ -3,292 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Google Client ID Configuration -->
     <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID_HERE">
-    <meta name="theme-color" content="#009688">
-    <title>Secure Wallet BD + Cloud Sync</title>
-    <meta name="description" content="Offline Secure Wallet with Google Sheets Backup">
+    <title>ProWallet</title>
+    <meta name="description" content="Offline-first Wallet with Google Sheets Sync">
     
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-
-    <style>
-        /* =========================================
-           CSS VARIABLES & THEME
-           ========================================= */
-        :root {
-            --primary: #009688;
-            --primary-dark: #00796B;
-            --primary-light: #B2DFDB;
-            --secondary: #263238;
-            --bg-body: #F4F6F8;
-            --bg-card: #FFFFFF;
-            --text-main: #263238;
-            --text-light: #78909C;
-            --danger: #E53935;
-            --success: #43A047;
-            --google-blue: #4285F4;
-            --border: #ECEFF1;
-            --shadow: 0 4px 12px rgba(0,0,0,0.05);
-            --radius: 12px;
-            --sidebar-width: 260px;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
-        
-        body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* =========================================
-           LAYOUT COMPONENTS
-           ========================================= */
-        #app { display: flex; height: 100%; width: 100%; position: relative; }
-
-        /* Sidebar */
-        aside {
-            width: var(--sidebar-width);
-            background: var(--bg-card);
-            border-right: 1px solid var(--border);
-            display: none; /* Hidden on mobile */
-            flex-direction: column;
-            padding: 24px;
-            z-index: 20;
-        }
-
-        @media (min-width: 769px) {
-            aside { display: flex; }
-            .mobile-nav { display: none !important; }
-            main { padding-bottom: 0; }
-            #fab { right: 40px; bottom: 40px; }
-        }
-
-        /* Main Content */
-        main {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            padding-bottom: 80px; /* Space for mobile nav */
-            position: relative;
-            scroll-behavior: smooth;
-        }
-
-        /* Mobile Navigation */
-        .mobile-nav {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: var(--bg-card);
-            border-top: 1px solid var(--border);
-            display: flex; justify-content: space-around;
-            padding: 10px 0;
-            z-index: 30;
-        }
-
-        /* =========================================
-           UI ELEMENTS
-           ========================================= */
-        h1, h2, h3 { color: var(--secondary); margin-bottom: 0.5rem; font-weight: 700; }
-        .text-sm { font-size: 0.85rem; color: var(--text-light); }
-        .text-lg { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
-        .currency { font-family: 'Courier New', monospace; letter-spacing: -0.5px; }
-
-        .card {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid transparent;
-            transition: 0.2s;
-        }
-        .card:hover { border-color: var(--primary-light); }
-
-        /* Buttons */
-        button {
-            cursor: pointer; border: none; font-size: 14px;
-            border-radius: 8px; padding: 12px 20px; transition: 0.2s;
-            font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
-        .btn-google { background: white; color: var(--secondary); border: 1px solid #ddd; }
-        
-        /* Inputs */
-        input, select {
-            width: 100%; padding: 14px; border: 1px solid var(--border);
-            border-radius: 8px; font-size: 16px; background: white;
-            margin-bottom: 15px; color: var(--secondary);
-        }
-        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
-
-        /* Nav Items */
-        .nav-item {
-            display: flex; align-items: center; gap: 12px;
-            padding: 12px 16px; border-radius: 8px; color: var(--text-light);
-            cursor: pointer; margin-bottom: 4px; font-weight: 500;
-        }
-        .nav-item:hover { background: var(--bg-body); color: var(--primary); }
-        .nav-item.active { background: var(--primary-light); color: var(--primary-dark); }
-
-        /* Floating Action Button */
-        #fab {
-            position: fixed; bottom: 90px; right: 20px;
-            width: 60px; height: 60px; border-radius: 50%;
-            background: var(--primary); color: white;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 8px 20px rgba(0, 150, 136, 0.3);
-            font-size: 32px; cursor: pointer; z-index: 25;
-            transition: transform 0.2s;
-        }
-        #fab:hover { transform: scale(1.05); }
-
-        /* Modals */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); display: none;
-            align-items: center; justify-content: center; z-index: 100;
-            backdrop-filter: blur(4px);
-        }
-        .modal {
-            background: white; width: 92%; max-width: 500px;
-            border-radius: 16px; padding: 24px;
-            max-height: 90vh; overflow-y: auto;
-            animation: slideUp 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-        }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        /* Auth Screen (App PIN) */
-        #auth-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: white; z-index: 999; display: flex;
-            flex-direction: column; align-items: center; justify-content: center;
-            padding: 30px; text-align: center;
-        }
-        .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 300px; margin-top: 20px; }
-        .pin-btn {
-            background: #F5F5F5; padding: 20px; border-radius: 12px;
-            font-size: 1.5rem; color: var(--secondary);
-        }
-        .pin-btn:active { background: var(--primary-light); color: var(--primary); }
-        .pin-dots { display: flex; gap: 15px; margin: 20px 0; }
-        .pin-dot { width: 15px; height: 15px; border-radius: 50%; background: #E0E0E0; transition: 0.2s; }
-        .pin-dot.filled { background: var(--primary); transform: scale(1.4); }
-
-        /* Google Sync Specifics */
-        .sync-status { font-size: 12px; font-weight: 600; display: inline-block; padding: 4px 8px; border-radius: 4px; }
-        .status-success { background: #E8F5E9; color: #2E7D32; }
-        .status-loading { background: #E3F2FD; color: #1565C0; }
-        .status-error { background: #FFEBEE; color: #C62828; }
-
-        /* List Items */
-        .tx-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 0; border-bottom: 1px solid #f0f0f0;
-        }
-        .tx-icon {
-            width: 40px; height: 40px; border-radius: 10px;
-            background: var(--bg-body); color: var(--primary);
-            display: flex; align-items: center; justify-content: center;
-            margin-right: 15px; font-size: 1.2rem;
-        }
-        .amount-expense { color: var(--secondary); }
-        .amount-income { color: var(--success); }
-
-        /* Stats Bars */
-        .stat-row { margin-bottom: 16px; }
-        .stat-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
-        .progress-bg { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
-        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 1s ease; }
-
-        /* =========================================
-           PRINT STYLES (A4)
-           ========================================= */
-        #print-area { display: none; }
-        
-        @media print {
-            aside, .mobile-nav, #fab, #auth-screen, .modal-overlay, .no-print { display: none !important; }
-            body, #app, main { height: auto; overflow: visible; background: white; }
-            main { padding: 0; margin: 0; }
-            #print-area { display: block; padding: 20px; }
-            
-            .print-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-            .print-table th, .print-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-            .print-table th { background: #f0f0f0; }
-            .text-right { text-align: right; }
-            @page { margin: 20mm; size: A4; }
-        }
-        .print-header { display: none; }
-
-    </style>
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-    <!-- AUTH SCREEN (App PIN) -->
+    <!-- 1. AUTH SCREEN (App PIN) -->
     <div id="auth-screen">
-        <div style="font-size: 4rem; margin-bottom: 20px;">🔒</div>
-        <h2 id="auth-title">Setup Security PIN</h2>
-        <p class="text-sm">Secure your data with a 4-digit PIN</p>
-        
-        <div class="pin-dots">
-            <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-        </div>
+        <div class="auth-box">
+            <div style="font-size: 48px; margin-bottom: 20px; color: var(--primary-dark);">🔒</div>
+            <h2 id="auth-title" style="margin-bottom: 8px;">Setup Security PIN</h2>
+            <p class="text-light" style="margin-bottom: 30px;">Secure your financial data</p>
+            
+            <div class="pin-dots">
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+            </div>
 
-        <div class="pin-pad">
-            <button class="pin-btn" onclick="Auth.enter(1)">1</button>
-            <button class="pin-btn" onclick="Auth.enter(2)">2</button>
-            <button class="pin-btn" onclick="Auth.enter(3)">3</button>
-            <button class="pin-btn" onclick="Auth.enter(4)">4</button>
-            <button class="pin-btn" onclick="Auth.enter(5)">5</button>
-            <button class="pin-btn" onclick="Auth.enter(6)">6</button>
-            <button class="pin-btn" onclick="Auth.enter(7)">7</button>
-            <button class="pin-btn" onclick="Auth.enter(8)">8</button>
-            <button class="pin-btn" onclick="Auth.enter(9)">9</button>
-            <div></div>
-            <button class="pin-btn" onclick="Auth.enter(0)">0</button>
-            <button class="pin-btn" style="background:transparent; font-size:1.2rem; display:flex; align-items:center; justify-content:center;" onclick="Auth.clear()">⌫</button>
+            <div class="pin-pad">
+                <button class="pin-btn" onclick="Auth.enter(1)">1</button>
+                <button class="pin-btn" onclick="Auth.enter(2)">2</button>
+                <button class="pin-btn" onclick="Auth.enter(3)">3</button>
+                <button class="pin-btn" onclick="Auth.enter(4)">4</button>
+                <button class="pin-btn" onclick="Auth.enter(5)">5</button>
+                <button class="pin-btn" onclick="Auth.enter(6)">6</button>
+                <button class="pin-btn" onclick="Auth.enter(7)">7</button>
+                <button class="pin-btn" onclick="Auth.enter(8)">8</button>
+                <button class="pin-btn" onclick="Auth.enter(9)">9</button>
+                <div></div>
+                <button class="pin-btn" onclick="Auth.enter(0)">0</button>
+                <button class="pin-btn" style="background:transparent; border:1px solid #eee;" onclick="Auth.clear()">⌫</button>
+            </div>
         </div>
     </div>
 
-    <!-- APP CONTAINER -->
+    <!-- 2. APP CONTAINER -->
     <div id="app" style="display:none;">
+        
+        <!-- Sidebar -->
         <aside>
-            <div style="margin-bottom: 40px; font-size: 20px; font-weight:bold; color: var(--primary);">
-                💳 Wallet BD
-            </div>
-            <div class="nav-item active" onclick="Router.go('dashboard')">
-                <span>📊</span> Dashboard
-            </div>
-            <div class="nav-item" onclick="Router.go('transactions')">
-                <span>💳</span> Transactions
-            </div>
-            <div class="nav-item" onclick="Router.go('analytics')">
-                <span>📈</span> Analytics
-            </div>
-            <div class="nav-item" onclick="Router.go('accounts')">
-                <span>🏦</span> Accounts
-            </div>
-            <div style="margin-top: auto;">
-                <div class="nav-item" onclick="Router.go('settings')">
-                    <span>⚙️</span> Settings
-                </div>
-            </div>
+            <div class="brand">💳 ProWallet</div>
+            <a class="nav-item active" onclick="Router.go('dashboard')">📊 Dashboard</a>
+            <a class="nav-item" onclick="Router.go('transactions')">💳 Transactions</a>
+            <a class="nav-item" onclick="Router.go('analytics')">📈 Analytics</a>
+            <a class="nav-item" onclick="Router.go('accounts')">🏦 Accounts</a>
+            <div style="margin-top: auto;"></div>
+            <a class="nav-item" onclick="Router.go('settings')">⚙️ Settings</a>
         </aside>
 
+        <!-- Main Content Area -->
         <main id="main-view">
-            <!-- Views injected here -->
+            <!-- Views injected here via JS -->
         </main>
 
-        <!-- Hidden Print Container -->
+        <!-- Hidden Print Container (Visible only on Print) -->
         <div id="print-area">
             <div class="print-header">
-                <h2>Financial Statement</h2>
+                <h2>Financial Report</h2>
                 <p id="print-date">Date: </p>
             </div>
             <table class="print-table">
@@ -304,12 +85,14 @@
                 <tbody id="print-body"></tbody>
             </table>
             <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #888;">
-                Generated by Secure Wallet BD | Offline Mode
+                Generated by ProWallet | Offline Mode
             </div>
         </div>
 
+        <!-- Floating Action Button -->
         <div id="fab" onclick="App.openTxModal()">+</div>
 
+        <!-- Mobile Navigation -->
         <nav class="mobile-nav">
             <div class="nav-item" onclick="Router.go('dashboard')">📊</div>
             <div class="nav-item" onclick="Router.go('transactions')">💳</div>
@@ -318,633 +101,121 @@
         </nav>
     </div>
 
-    <!-- MODALS -->
+    <!-- 3. MODALS -->
 
     <!-- Transaction Modal -->
     <div id="modal-tx" class="modal-overlay">
         <div class="modal">
-            <h3>Add Transaction</h3>
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button class="btn-outline" id="btn-exp" onclick="App.setTxType('expense')">Expense</button>
-                <button class="btn-outline" id="btn-inc" onclick="App.setTxType('income')">Income</button>
-                <button class="btn-outline" id="btn-trf" onclick="App.setTxType('transfer')">Transfer</button>
+            <div class="modal-header">Add Transaction</div>
+            <div class="modal-body">
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <button id="btn-exp" class="btn btn-outline" style="flex:1" onclick="App.setTxType('expense')">Expense</button>
+                    <button id="btn-inc" class="btn btn-outline" style="flex:1" onclick="App.setTxType('income')">Income</button>
+                    <button id="btn-trf" class="btn btn-outline" style="flex:1" onclick="App.setTxType('transfer')">Transfer</button>
+                </div>
+                <form onsubmit="App.submitTx(event)">
+                    <label class="text-light">Amount (৳)</label>
+                    <input type="number" id="inp-amt" step="0.01" required placeholder="0.00" inputmode="decimal">
+                    
+                    <label class="text-light">Date</label>
+                    <input type="date" id="inp-date" required>
+
+                    <div id="fields-cat">
+                        <label class="text-light">Category</label>
+                        <select id="inp-cat" onchange="App.updateSub()"></select>
+                        <label class="text-light">Sub-category</label>
+                        <select id="inp-sub"></select>
+                    </div>
+
+                    <label class="text-light">Account (From)</label>
+                    <select id="inp-acc-from"></select>
+
+                    <div id="fields-to" style="display:none;">
+                        <label class="text-light">Account (To)</label>
+                        <select id="inp-acc-to"></select>
+                    </div>
+
+                    <label class="text-light">Note</label>
+                    <input type="text" id="inp-note" placeholder="Details...">
+                </form>
             </div>
-            <form onsubmit="App.submitTx(event)">
-                <label class="text-sm">Amount (৳)</label>
-                <input type="number" id="inp-amt" step="0.01" required placeholder="0.00" inputmode="decimal">
-                
-                <label class="text-sm">Date</label>
-                <input type="date" id="inp-date" required>
-
-                <!-- Fields for Expense/Income -->
-                <div id="fields-cat">
-                    <label class="text-sm">Category</label>
-                    <select id="inp-cat" onchange="App.updateSub()"></select>
-                    <label class="text-sm">Sub-category</label>
-                    <select id="inp-sub"></select>
-                </div>
-
-                <!-- Fields for Account -->
-                <label class="text-sm">Account (From)</label>
-                <select id="inp-acc-from"></select>
-
-                <!-- Fields for Transfer -->
-                <div id="fields-to" style="display:none;">
-                    <label class="text-sm">Account (To)</label>
-                    <select id="inp-acc-to"></select>
-                </div>
-
-                <label class="text-sm">Note</label>
-                <input type="text" id="inp-note" placeholder="Details...">
-
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button type="button" class="btn-outline" onclick="App.closeModals()">Cancel</button>
-                    <button type="submit" class="btn-primary">Save</button>
-                </div>
-            </form>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="App.closeModals()">Cancel</button>
+                <button class="btn btn-primary" onclick="document.querySelector('#modal-tx form').dispatchEvent(new Event('submit'))">Save Transaction</button>
+            </div>
         </div>
     </div>
 
     <!-- Account Modal -->
     <div id="modal-acc" class="modal-overlay">
         <div class="modal">
-            <h3>Add Account</h3>
-            <form onsubmit="App.submitAcc(event)">
-                <label class="text-sm">Account Name</label>
-                <input type="text" id="acc-name" required placeholder="e.g., DBBL Savings">
-                <label class="text-sm">Type</label>
-                <select id="acc-type">
-                    <option value="Cash">Cash</option>
-                    <option value="Bank">Bank</option>
-                    <option value="Mobile">Mobile Wallet</option>
-                </select>
-                <label class="text-sm">Initial Balance</label>
-                <input type="number" id="acc-bal" step="0.01" required value="0">
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button type="button" class="btn-outline" onclick="App.closeModals()">Cancel</button>
-                    <button type="submit" class="btn-primary">Add</button>
-                </div>
-            </form>
+            <div class="modal-header">Add Account</div>
+            <div class="modal-body">
+                <form onsubmit="App.submitAcc(event)">
+                    <label class="text-light">Account Name</label>
+                    <input type="text" id="acc-name" required placeholder="e.g., DBBL Savings">
+                    
+                    <label class="text-light">Type</label>
+                    <select id="acc-type">
+                        <option value="Cash">Cash</option>
+                        <option value="Bank">Bank</option>
+                        <option value="Mobile">Mobile Wallet</option>
+                    </select>
+                    
+                    <label class="text-light">Initial Balance</label>
+                    <input type="number" id="acc-bal" step="0.01" required value="0">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="App.closeModals()">Cancel</button>
+                <button class="btn btn-primary" onclick="document.querySelector('#modal-acc form').dispatchEvent(new Event('submit'))">Add Account</button>
+            </div>
         </div>
     </div>
 
     <!-- Settings Modal -->
     <div id="modal-set" class="modal-overlay">
         <div class="modal">
-            <h3>Settings</h3>
-            
-            <!-- Google Sync Section -->
-            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee;">
-                <h4 style="margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                    ☁️ Google Sheets Backup
-                </h4>
+            <div class="modal-header">Settings & Sync</div>
+            <div class="modal-body">
                 
-                <div id="g-auth-section">
-                    <p class="text-sm" style="margin-bottom:10px;">Backup your data to Google Sheets securely.</p>
-                    <button id="btn-g-login" class="btn-google" onclick="GoogleAuth.signIn()">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="18" alt="G">
-                        Sign in with Google
-                    </button>
-                    <button id="btn-g-logout" class="btn-outline" style="display:none; margin-top:10px;" onclick="GoogleAuth.signOut()">Sign Out</button>
+                <!-- Google Sync Section -->
+                <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-main);">☁️ Google Sheets Backup</h3>
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px solid #eee; margin-bottom: 20px;">
+                    
+                    <div id="g-auth-section">
+                        <p class="text-light" style="margin-bottom:10px; line-height:1.4;">Backup your data securely to your personal Google Sheets.</p>
+                        <button id="btn-g-login" class="btn btn-google" onclick="GoogleAuth.signIn()">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="18" alt="G"> Sign in with Google
+                        </button>
+                        <button id="btn-g-logout" class="btn btn-outline" style="display:none; margin-top:10px;" onclick="GoogleAuth.signOut()">Sign Out</button>
+                    </div>
+
+                    <div id="g-sync-section" style="display:none; border-top:1px solid #ddd; padding-top:15px; margin-top:10px;">
+                        <label class="text-light">Sheet ID</label>
+                        <input type="text" id="inp-sheet-id" placeholder="1BxiM..." value="">
+                        <p class="text-light" style="font-size:11px; color:#666; margin-bottom:10px;">Get ID from your Google Sheet URL.</p>
+                        
+                        <button class="btn btn-primary" id="btn-sync" onclick="GoogleSync.syncAll()">Sync to Google Sheets</button>
+                        <div id="sync-status-msg" style="margin-top:10px; text-align:center; font-size:12px; font-weight:600;"></div>
+                    </div>
                 </div>
 
-                <div id="g-sync-section" style="display:none; margin-top:15px; border-top:1px solid #ddd; padding-top:10px;">
-                    <label class="text-sm">Sheet ID</label>
-                    <input type="text" id="inp-sheet-id" placeholder="1BxiM..." value="">
-                    <p class="text-sm" style="font-size:11px; color:#666;">Create a sheet, get ID from URL.</p>
-                    
-                    <button class="btn-primary" id="btn-sync" onclick="GoogleSync.syncAll()">
-                        Sync to Google Sheets
-                    </button>
-                    <div id="sync-status-msg" style="margin-top:10px; text-align:center; font-size:12px;"></div>
+                <!-- Local Actions -->
+                <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-main);">🖨️ Local Actions</h3>
+                <div style="display:grid; gap:10px;">
+                    <button class="btn btn-outline" onclick="App.printReport()">Print Report (PDF)</button>
+                    <button class="btn btn-danger" onclick="App.reset()">⚠️ Factory Reset</button>
+                    <button class="btn btn-outline" onclick="Auth.logout()">🔒 Lock App</button>
                 </div>
             </div>
-
-            <!-- Other Settings -->
-            <div style="display:grid; gap:15px;">
-                <button class="btn-outline" onclick="App.printReport()">🖨️ Print Report</button>
-                <button class="btn-danger" onclick="App.reset()">⚠️ Factory Reset</button>
-                <button class="btn-outline" onclick="Auth.logout()">🔒 Lock App</button>
-                <button class="btn-outline" onclick="App.closeModals()">Close</button>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="App.closeModals()">Close</button>
             </div>
         </div>
     </div>
 
-    <script>
-        /**
-         * SECURE WALLET BD + GOOGLE SYNC
-         * Core Logic: LocalStorage + OAuth 2.0 + Sheets API v4
-         */
-
-        // 1. DATA CONSTANTS
-        const DB_KEY = "wallet_bd_v1";
-        const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID_HERE'; // <-- REPLACE THIS
-        const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
-
-        const CATEGORIES = {
-            "Transportation (Bangladesh)": ["Bus", "Train", "CNG / Auto Rickshaw", "Rickshaw", "Private Car", "Microbus", "Motorcycle", "Bicycle", "Launch / Ferry", "Ride Share (Uber / Pathao / Bolt)"],
-            "Food": ["Fruits & Vegetables", "Meat & Fish", "Cooking", "Sauces & Pickles", "Dairy & Eggs", "Breakfast", "Snacks", "Beverages", "Frozen & Canned", "Diabetic Food", "Ice Cream"],
-            "Cleaning Supplies": ["Dishwashing", "Laundry", "Toilet Cleaners", "Floor & Glass", "Air Fresheners", "Trash Bags", "Shoe Care"],
-            "Home & Kitchen": ["Kitchen Accessories", "Appliances", "Tools & Hardware", "Lights & Electrical", "Gardening", "Organizer"],
-            "Baby Care": ["Diapers", "Baby Food", "Skincare", "Oral Care", "Newborn Essentials"],
-            "Personal Care": ["Men's Care", "Women's Care", "Handwash", "Oral Care", "Skin Care", "Hair Products"],
-            "Stationery & Office": ["Writing", "Printing", "Paper Supplies", "Office Electronics", "School Supplies"],
-            "Pet Care": ["Cat Food", "Dog Food", "Grooming", "Accessories"],
-            "Health & Wellness": ["Medicines", "Supplements", "Medical Devices", "Antiseptics", "Masks & Safety"],
-            "Vehicle Essentials": ["Fuel", "Service", "Insurance", "Parking", "Toll", "Spare Parts"]
-        };
-
-        // 2. STATE MANAGEMENT (LocalStorage)
-        let State = {
-            accounts: [],
-            transactions: [],
-            pinHash: null
-        };
-
-        const Store = {
-            load: () => {
-                const raw = localStorage.getItem(DB_KEY);
-                if (raw) {
-                    try { State = JSON.parse(raw); } catch (e) { Store.reset(); }
-                } else {
-                    State.accounts = [{ id: '1', name: 'Cash Wallet', type: 'Cash', balance: 0 }, { id: '2', name: 'bKash Personal', type: 'Mobile', balance: 0 }];
-                    State.transactions = [];
-                    Store.save();
-                }
-            },
-            save: () => { localStorage.setItem(DB_KEY, JSON.stringify(State)); },
-            reset: () => { localStorage.removeItem(DB_KEY); location.reload(); }
-        };
-
-        // 3. GOOGLE AUTHENTICATION (Client-Side Only)
-        let tokenClient;
-        let gapiInited = false;
-        let gisInited = false;
-
-        const GoogleAuth = {
-            init: () => {
-                if(!tokenClient) {
-                    tokenClient = google.accounts.oauth2.initTokenClient({
-                        client_id: CLIENT_ID,
-                        scope: SCOPES,
-                        callback: (response) => {
-                            if (response.access_token) {
-                                sessionStorage.setItem('g_access_token', response.access_token);
-                                GoogleAuth.updateUI(true);
-                            } else {
-                                alert("Google Auth Failed");
-                            }
-                        },
-                    });
-                }
-            },
-            signIn: () => {
-                if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
-            },
-            signOut: () => {
-                sessionStorage.removeItem('g_access_token');
-                const token = google.accounts.oauth2.getToken();
-                if (token !== null) {
-                    google.accounts.oauth2.revoke(token.access_token);
-                }
-                GoogleAuth.updateUI(false);
-            },
-            checkSession: () => {
-                const token = sessionStorage.getItem('g_access_token');
-                GoogleAuth.updateUI(!!token);
-            },
-            updateUI: (isSignedIn) => {
-                const authDiv = document.getElementById('g-auth-section');
-                const syncDiv = document.getElementById('g-sync-section');
-                
-                if (isSignedIn) {
-                    document.getElementById('btn-g-login').style.display = 'none';
-                    document.getElementById('btn-g-logout').style.display = 'inline-flex';
-                    syncDiv.style.display = 'block';
-                    
-                    // Load saved Sheet ID if available
-                    const savedId = localStorage.getItem('g_sheet_id');
-                    if(savedId) document.getElementById('inp-sheet-id').value = savedId;
-                } else {
-                    document.getElementById('btn-g-login').style.display = 'inline-flex';
-                    document.getElementById('btn-g-logout').style.display = 'none';
-                    syncDiv.style.display = 'none';
-                }
-            }
-        };
-
-        // 4. GOOGLE SHEETS API (Sync Logic)
-        const GoogleSync = {
-            setStatus: (msg, type) => {
-                const el = document.getElementById('sync-status-msg');
-                el.innerHTML = msg;
-                el.className = 'sync-status ' + (type === 'success' ? 'status-success' : type === 'loading' ? 'status-loading' : 'status-error');
-            },
-
-            appendData: async (sheetId, range, data) => {
-                const token = sessionStorage.getItem('g_access_token');
-                if(!token) throw new Error("Not Logged In");
-
-                const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}:append?valueInputOption=USER_ENTERED`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ values: data })
-                });
-
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.error.message);
-                }
-                return await response.json();
-            },
-
-            syncAll: async () => {
-                const sheetId = document.getElementById('inp-sheet-id').value.trim();
-                if(!sheetId) return alert("Please enter a valid Google Sheet ID");
-
-                GoogleSync.setStatus("Syncing...", "loading");
-
-                try {
-                    // 1. Sync Transactions
-                    // Format: Date, Category, Subcategory, Amount, Account, Type, Timestamp
-                    const txRows = State.transactions.map(t => [
-                        t.date,
-                        t.category,
-                        t.subcategory || '',
-                        t.amount,
-                        State.accounts.find(a => a.id == t.accountId)?.name || 'Unknown',
-                        t.type,
-                        new Date().toISOString()
-                    ]);
-                    
-                    if(txRows.length > 0) {
-                        await GoogleSync.appendData(sheetId, "Transactions", txRows);
-                    }
-
-                    // 2. Sync Accounts
-                    // Format: Account Name, Balance, Last Updated
-                    const accRows = State.accounts.map(a => [
-                        a.name,
-                        a.balance,
-                        new Date().toISOString()
-                    ]);
-
-                    await GoogleSync.appendData(sheetId, "Accounts", accRows);
-
-                    // Success
-                    GoogleSync.setStatus("Sync Complete!", "success");
-                    localStorage.setItem('g_sheet_id', sheetId);
-
-                    // 3. Sync Metadata
-                    await GoogleSync.appendData(sheetId, "Metadata", [
-                        ["Last Sync", new Date().toISOString()],
-                        ["Total Transactions", State.transactions.length]
-                    ]);
-
-                } catch (error) {
-                    console.error(error);
-                    GoogleSync.setStatus("Error: " + error.message, "error");
-                }
-            }
-        };
-
-        // 5. APP AUTHENTICATION (PIN)
-        const Auth = {
-            buffer: "",
-            init: async () => {
-                Store.load();
-                GoogleAuth.checkSession();
-                if (State.pinHash) {
-                    document.getElementById('auth-title').innerText = "Enter PIN";
-                } else {
-                    document.getElementById('auth-title').innerText = "Setup New PIN";
-                }
-            },
-            enter: (num) => {
-                if (Auth.buffer.length < 4) {
-                    Auth.buffer += num;
-                    Auth.updateDots();
-                }
-                if (Auth.buffer.length === 4) Auth.verify();
-            },
-            clear: () => {
-                Auth.buffer = "";
-                Auth.updateDots();
-            },
-            updateDots: () => {
-                document.querySelectorAll('.pin-dot').forEach((d, i) => {
-                    d.classList.toggle('filled', i < Auth.buffer.length);
-                });
-            },
-            verify: async () => {
-                const hash = await App.hash(Auth.buffer);
-                if (!State.pinHash) {
-                    State.pinHash = hash;
-                    Store.save();
-                    Auth.unlock();
-                } else {
-                    if (hash === State.pinHash) Auth.unlock();
-                    else {
-                        document.getElementById('auth-title').innerText = "Wrong PIN";
-                        setTimeout(() => {
-                            Auth.clear();
-                            document.getElementById('auth-title').innerText = "Enter PIN";
-                        }, 1000);
-                    }
-                }
-            },
-            unlock: () => {
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
-                // Initialize Google Auth Client only after unlock to be safe
-                GoogleAuth.init();
-                Router.go('dashboard');
-            },
-            logout: () => location.reload()
-        };
-
-        // 6. CORE APPLICATION LOGIC
-        const App = {
-            hash: async (str) => {
-                const buf = new TextEncoder().encode(str);
-                const hashBuf = await crypto.subtle.digest('SHA-256', buf);
-                const hashArr = Array.from(new Uint8Array(hashBuf));
-                return hashArr.map(b => b.toString(16).padStart(2, '0')).join('');
-            },
-            formatMoney: (num) => new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT' }).format(num),
-            
-            openTxModal: () => {
-                const catSel = document.getElementById('inp-cat');
-                catSel.innerHTML = '<option value="">Select</option>';
-                Object.keys(CATEGORIES).forEach(k => catSel.add(new Option(k, k)));
-                
-                const accSel = document.getElementById('inp-acc-from');
-                const toSel = document.getElementById('inp-acc-to');
-                accSel.innerHTML = ''; toSel.innerHTML = '';
-                State.accounts.forEach(a => {
-                    const opt = `${a.name} (${App.formatMoney(a.balance)})`;
-                    accSel.add(new Option(opt, a.id));
-                    toSel.add(new Option(a.name, a.id));
-                });
-
-                document.getElementById('inp-date').valueAsDate = new Date();
-                App.setTxType('expense');
-                document.getElementById('modal-tx').classList.add('open');
-                document.getElementById('modal-tx').style.display = 'flex';
-            },
-
-            setTxType: (type) => {
-                const isExp = type === 'expense';
-                const isInc = type === 'income';
-                const isTrf = type === 'transfer';
-
-                document.getElementById('fields-cat').style.display = (isTrf) ? 'none' : 'block';
-                document.getElementById('fields-to').style.display = (isTrf) ? 'block' : 'none';
-
-                const styles = (active) => `background:${active?'var(--primary)':'transparent'}; color:${active?'white':'inherit'}`;
-                document.getElementById('btn-exp').style = styles(isExp);
-                document.getElementById('btn-inc').style = styles(isInc);
-                document.getElementById('btn-trf').style = styles(isTrf);
-                
-                App.currentType = type;
-            },
-
-            updateSub: () => {
-                const cat = document.getElementById('inp-cat').value;
-                const sub = document.getElementById('inp-sub');
-                sub.innerHTML = '';
-                if(cat && CATEGORIES[cat]) CATEGORIES[cat].forEach(s => sub.add(new Option(s, s)));
-            },
-
-            submitTx: (e) => {
-                e.preventDefault();
-                const amt = parseFloat(document.getElementById('inp-amt').value);
-                const date = document.getElementById('inp-date').value;
-                const note = document.getElementById('inp-note').value;
-                const fromAcc = document.getElementById('inp-acc-from').value;
-                const toAcc = document.getElementById('inp-acc-to').value;
-                const cat = document.getElementById('inp-cat').value;
-                const sub = document.getElementById('inp-sub').value;
-
-                const fromIdx = State.accounts.findIndex(a => a.id === fromAcc);
-                const toIdx = State.accounts.findIndex(a => a.id === toAcc);
-
-                if (App.currentType === 'transfer') {
-                    if (fromAcc === toAcc) return alert("Cannot transfer to same account");
-                    if (State.accounts[fromIdx].balance < amt) return alert("Insufficient funds");
-                    
-                    State.accounts[fromIdx].balance -= amt;
-                    State.accounts[toIdx].balance += amt;
-                    
-                    State.transactions.unshift({
-                        id: Date.now(), date, type: 'transfer', amount: amt, accountId: fromAcc, 
-                        category: 'Transfer', subcategory: `To: ${State.accounts[toIdx].name}`, note
-                    });
-                } else {
-                    const targetIdx = App.currentType === 'expense' ? fromIdx : toIdx;
-                    const targetId = App.currentType === 'expense' ? fromAcc : toAcc;
-                    
-                    if (App.currentType === 'expense') {
-                        if (State.accounts[targetIdx].balance < amt) return alert("Insufficient funds");
-                        State.accounts[targetIdx].balance -= amt;
-                    } else {
-                        State.accounts[targetIdx].balance += amt;
-                    }
-
-                    State.transactions.unshift({
-                        id: Date.now(), date, type: App.currentType, amount: amt, accountId: targetId,
-                        category: cat, subcategory: sub, note
-                    });
-                }
-
-                Store.save();
-                App.closeModals();
-                Router.refresh();
-            },
-
-            submitAcc: (e) => {
-                e.preventDefault();
-                const name = document.getElementById('acc-name').value;
-                const type = document.getElementById('acc-type').value;
-                const bal = parseFloat(document.getElementById('acc-bal').value);
-                
-                State.accounts.push({
-                    id: Date.now().toString(), name, type, balance: bal
-                });
-                Store.save();
-                App.closeModals();
-                Router.refresh();
-            },
-
-            deleteTx: (id) => {
-                if(!confirm("Delete this transaction?")) return;
-                const tx = State.transactions.find(t => t.id == id);
-                const acc = State.accounts.find(a => a.id === tx.accountId);
-                
-                if(acc) {
-                    if (tx.type === 'expense') acc.balance += tx.amount;
-                    else if (tx.type === 'income') acc.balance -= tx.amount;
-                    else if (tx.type === 'transfer') {
-                        alert("Please delete transfers via reversing manually or contacting admin (feature limit)");
-                        return;
-                    }
-                }
-                
-                State.transactions = State.transactions.filter(t => t.id != id);
-                Store.save();
-                Router.refresh();
-            },
-
-            closeModals: () => {
-                document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none');
-            },
-
-            printReport: () => {
-                App.closeModals();
-                const date = new Date();
-                document.getElementById('print-date').innerText = `Generated: ${date.toDateString()} ${date.toLocaleTimeString()}`;
-                
-                const tbody = document.getElementById('print-body');
-                tbody.innerHTML = State.transactions.map(t => {
-                    const accName = State.accounts.find(a => a.id == t.accountId)?.name || 'Unknown';
-                    return `
-                    <tr>
-                        <td>${t.date}</td>
-                        <td>${t.type.toUpperCase()}</td>
-                        <td>${t.category}</td>
-                        <td>${accName}</td>
-                        <td class="text-right">${App.formatMoney(t.amount)}</td>
-                    </tr>
-                    `;
-                }).join('');
-                
-                window.print();
-            },
-
-            reset: () => {
-                if(confirm("DANGER: This will delete ALL DATA including PIN. Continue?")) {
-                    Store.reset();
-                }
-            }
-        };
-
-        // 7. VIEWS
-        const Views = {
-            dashboard: () => {
-                const total = State.accounts.reduce((s, a) => s + a.balance, 0);
-                const recent = State.transactions.slice(0, 5);
-                return `
-                    <div class="card" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white;">
-                        <div class="text-sm">Total Balance</div>
-                        <div class="text-lg">${App.formatMoney(total)}</div>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3>Accounts</h3>
-                        <button class="btn-primary" style="width:auto" onclick="document.getElementById('modal-acc').style.display='flex'">+ Add</button>
-                    </div>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:15px; margin-bottom:30px;">
-                        ${State.accounts.map(a => `
-                            <div class="card" style="margin:0; padding:15px;">
-                                <div class="text-sm">${a.type}</div>
-                                <div style="font-weight:bold;">${a.name}</div>
-                                <div style="color:var(--primary); font-weight:bold;">${App.formatMoney(a.balance)}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <h3>Recent</h3>
-                    <div class="card" style="padding:0 20px;">
-                        ${recent.length ? '' : '<p class="text-sm" style="padding:20px 0">No transactions.</p>'}
-                        ${recent.map(t => Views.txItem(t)).join('')}
-                    </div>
-                `;
-            },
-            
-            transactions: () => `
-                <h2>Transactions</h2>
-                <div class="card" style="padding:0 20px;">
-                    ${State.transactions.map(t => Views.txItem(t)).join('')}
-                </div>
-            `,
-
-            txItem: (t) => {
-                const isExp = t.type === 'expense';
-                const acc = State.accounts.find(a => a.id == t.accountId)?.name || '';
-                return `
-                <div class="tx-item">
-                    <div style="display:flex; align-items:center;">
-                        <div class="tx-icon">💳</div>
-                        <div>
-                            <div style="font-weight:600;">${t.category}</div>
-                            <div class="text-sm">${t.subcategory} • ${t.date}</div>
-                            <div class="text-sm">${acc}</div>
-                        </div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="font-weight:bold; color:${isExp?'var(--text-main)':'var(--success)'}">
-                            ${isExp?'-':'+'}${App.formatMoney(t.amount)}
-                        </div>
-                        <button class="btn-icon" style="font-size:14px;" onclick="App.deleteTx('${t.id}')">🗑️</button>
-                    </div>
-                </div>
-                `;
-            },
-
-            analytics: () => {
-                const cats = {};
-                let total = 0;
-                State.transactions.filter(t => t.type === 'expense').forEach(t => {
-                    cats[t.category] = (cats[t.category] || 0) + t.amount;
-                    total += t.amount;
-                });
-                
-                const rows = Object.entries(cats).sort((a,b) => b[1]-a[1]).map(([k,v]) => {
-                    const pct = ((v/total)*100).toFixed(1);
-                    return `
-                    <div class="stat-row">
-                        <div class="stat-label"><span>${k}</span><span>${App.formatMoney(v)} (${pct}%)</span></div>
-                        <div class="progress-bg"><div class="progress-bar" style="width:${pct}%"></div></div>
-                    </div>`;
-                }).join('');
-
-                return `<h2>Analytics</h2><div class="card">${rows || '<p class="text-sm">No data</p>'}</div>`;
-            },
-
-            accounts: () => {
-                return `
-                <h2>Accounts</h2>
-                <button class="btn-primary" style="margin-bottom:20px;" onclick="document.getElementById('modal-acc').style.display='flex'">+ Add Account</button>
-                <div style="display:grid; gap:15px;">
-                    ${State.accounts.map(a => `
-                        <div class="card">
-                            <div style="display:flex; justify-content:space-between;">
-                                <div style="font-weight:bold;">${a.name}</div>
-                                <div style="color:var(--primary); font-weight:bold;">${App.formatMoney(a.balance)}</div>
-                            </div>
-                            <div class="text-sm">${a.type}</div>
-                        </div>
-                    `).join('')}
-                </div>`;
-            },
-            settings: () => {
-                document.getElementById('modal-set').classList.add('open');
-                document.getElementById('modal-set').style.display = 'flex';
-                return '';
-            }
-        };
-
-        // 8. ROUTER
-        const Router = {
-            go: (view) => {
-                document.getElementById('main-view').innerHTML = Views[view]();
-            },
-            refresh: () => Router.go('dashboard')
-        };
-
-        // INIT
-        Auth.init();
-    </script>
+    <!-- App Logic -->
+    <script src="app.js"></script>
 </body>
 </html>
