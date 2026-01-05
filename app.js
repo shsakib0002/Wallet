@@ -4,7 +4,7 @@
 
 // 1. CONFIGURATION & CONSTANTS
 const DB_KEY = "wallet_bd_v1";
-const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID_HERE';
+const CLIENT_ID = '837032535848-8qoo6tf9rs0ljs2srks5d8k791rjgqpc.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 
 const CATEGORIES = {
